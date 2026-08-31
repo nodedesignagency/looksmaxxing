@@ -13,6 +13,24 @@ npx expo start
 
 Scan the QR code with Expo Go (iOS or Android).
 
+### A note on react-native-worklets
+
+It is pinned to an exact version and repeated in `overrides`, deliberately.
+
+Reanimated peer-depends on `react-native-worklets: 0.10.x`, so npm is free to
+hoist one version for the runtime and nest a different one for the Babel plugin.
+The plugin stamps its own version into every worklet it compiles and the runtime
+throws if the two disagree:
+
+```
+[Worklets] Mismatch between JavaScript code version and Worklets Babel plugin version
+```
+
+The pin is `0.10.1` because that is the version Expo Go for SDK 57 ships
+natively (`expo/bundledNativeModules.json`), so it has to match on all three
+sides — plugin, JS and native. Do not widen it to a range, and re-pin it from
+`bundledNativeModules.json` when upgrading the SDK.
+
 ## Why React Native and not Swift
 
 Expo Go only runs React Native — Swift cannot load into it. For this screen the
