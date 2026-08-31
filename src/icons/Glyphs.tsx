@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 /**
  * The Figma frame references the Solar icon set by name — `solar:play-bold`,
@@ -71,14 +71,11 @@ export const CartIcon = ({ size = 24, color = '#000', weight = 1.6 }: GlyphProps
   </Svg>
 );
 
-export const ChartIcon = ({ size = 24, color = '#000', weight = 1.6 }: GlyphProps) => (
-  <Svg {...linear(size)}>
-    <Path
-      d="M5 20V13.5M12 20V4M19 20v-9.5"
-      stroke={color}
-      strokeWidth={weight * 1.35}
-      strokeLinecap="round"
-    />
+export const ChartIcon = ({ size = 24, color = '#000' }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x={3.4} y={13} width={4.2} height={7.6} rx={1.6} fill={color} />
+    <Rect x={9.9} y={8.4} width={4.2} height={12.2} rx={1.6} fill={color} />
+    <Rect x={16.4} y={3.6} width={4.2} height={17} rx={1.6} fill={color} />
   </Svg>
 );
 
@@ -106,33 +103,11 @@ export const CheckIcon = ({ size = 24, color = '#000', weight = 2.6 }: GlyphProp
 );
 
 /** Marks the lesson you're on. */
-export const StarIcon = ({ size = 24, color = '#000' }: GlyphProps) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M10.79 3.1c.5-1.02 1.92-1.02 2.42 0l2.05 4.18c.2.4.58.68 1.02.75l4.6.67c1.12.17 1.56 1.55.75 2.34l-3.33 3.26c-.32.31-.46.76-.39 1.2l.79 4.6c.19 1.12-.98 1.97-1.98 1.44l-4.11-2.17a1.35 1.35 0 0 0-1.26 0L7.24 21.5c-1 .53-2.17-.32-1.98-1.43l.79-4.6c.07-.45-.08-.9-.39-1.21L2.33 11c-.81-.79-.37-2.17.76-2.34l4.6-.67c.44-.07.82-.35 1.02-.75L10.79 3.1Z"
-      fill={color}
-    />
-  </Svg>
-);
 
-export const LockIcon = ({ size = 24, color = '#000', weight = 1.7 }: GlyphProps) => (
-  <Svg {...linear(size)}>
-    <Rect
-      x={3.6}
-      y={10.2}
-      width={16.8}
-      height={11.3}
-      rx={4}
-      stroke={color}
-      strokeWidth={weight}
-    />
-    <Path
-      d="M7.4 10.2V7.6a4.6 4.6 0 1 1 9.2 0v2.6"
-      stroke={color}
-      strokeWidth={weight}
-      strokeLinecap="round"
-    />
-    <Circle cx={12} cy={15.8} r={1.5} fill={color} />
+export const KeyholeIcon = ({ size = 24, color = '#000' }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx={12} cy={10} r={3.6} fill={color} />
+    <Path d="M10.4 12.6h3.2l1.5 6.2a1 1 0 0 1-.97 1.2H9.87a1 1 0 0 1-.97-1.2l1.5-6.2Z" fill={color} />
   </Svg>
 );
 
@@ -143,63 +118,74 @@ export const BoltIcon = ({ size = 24, color = '#000' }: GlyphProps) => (
   </Svg>
 );
 
-export const CloseIcon = ({ size = 24, color = '#000', weight = 2 }: GlyphProps) => (
-  <Svg {...linear(size)}>
-    <Path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" stroke={color} strokeWidth={weight} strokeLinecap="round" />
+/**
+ * Chip icons.
+ *
+ * "Frame 2147236480" carries 20x20 rendered 3D icons
+ * ("freepik_..._Photoroom") as raster fills, which could not be exported.
+ * These are flat redraws of the same four objects in the screen's own blue and
+ * slate, which sits better beside the rest of the UI than saturated emoji would.
+ */
+
+const ICON_BLUE = '#4E88AE';
+const ICON_DEEP = '#2E5670';
+const ICON_LIGHT = '#BCD8EA';
+
+export const DumbbellIcon = ({ size = 24 }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x={8.4} y={10.7} width={7.2} height={2.6} rx={1.1} fill={ICON_DEEP} />
+    <Rect x={4.6} y={7.6} width={3.6} height={8.8} rx={1.5} fill={ICON_BLUE} />
+    <Rect x={15.8} y={7.6} width={3.6} height={8.8} rx={1.5} fill={ICON_BLUE} />
+    <Rect x={2.1} y={9.6} width={2.4} height={4.8} rx={1.1} fill={ICON_DEEP} />
+    <Rect x={19.5} y={9.6} width={2.4} height={4.8} rx={1.1} fill={ICON_DEEP} />
   </Svg>
 );
 
-export const FireIcon = ({ size = 24, color = '#000' }: GlyphProps) => (
+export const BottleIcon = ({ size = 24 }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x={9.7} y={1.9} width={4.6} height={3.2} rx={1.1} fill={ICON_DEEP} />
+    <Path
+      d="M9.1 6.4h5.8c1.9 0 3.4 1.5 3.4 3.4v8.8c0 1.9-1.5 3.4-3.4 3.4H9.1a3.4 3.4 0 0 1-3.4-3.4V9.8c0-1.9 1.5-3.4 3.4-3.4Z"
+      fill={ICON_BLUE}
+    />
+    <Rect x={7.8} y={10.6} width={8.4} height={4.6} rx={1.2} fill={ICON_LIGHT} />
+  </Svg>
+);
+
+export const CombIcon = ({ size = 24 }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* One rotation for the whole comb, so spine and teeth stay aligned. */}
+    <G transform="rotate(-22 12 12)">
+      <Rect x={2.6} y={7} width={18.8} height={3.8} rx={1.9} fill={ICON_DEEP} />
+      <Rect x={5} y={10.2} width={1.9} height={5.2} rx={0.95} fill={ICON_BLUE} />
+      <Rect x={9} y={10.2} width={1.9} height={5.2} rx={0.95} fill={ICON_BLUE} />
+      <Rect x={13} y={10.2} width={1.9} height={5.2} rx={0.95} fill={ICON_BLUE} />
+      <Rect x={17} y={10.2} width={1.9} height={5.2} rx={0.95} fill={ICON_BLUE} />
+    </G>
+  </Svg>
+);
+
+export const ToothIcon = ({ size = 24 }: GlyphProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M12 2.2c.4 3.1-1.3 4.6-2.9 6C7.4 9.7 6 11 6 13.9A6 6 0 0 0 18 14c0-3.3-1.6-5.3-3.1-6.7-.6 1-1.3 1.5-2 1.7.5-2.6-.2-5.1-.9-6.8Z"
-      fill={color}
+      d="M7.4 2.6c1.5 0 2.3.8 4.6.8s3.1-.8 4.6-.8c2.4 0 4 1.9 4 4.7 0 2.6-.9 4.2-1.5 6.5-.5 1.9-.6 4.1-1.2 5.8-.4 1.2-1 2-1.9 2-1.2 0-1.6-1.3-1.9-3-.3-1.6-.5-3.3-2.1-3.3s-1.8 1.7-2.1 3.3c-.3 1.7-.7 3-1.9 3-.9 0-1.5-.8-1.9-2-.6-1.7-.7-3.9-1.2-5.8C4.3 11.5 3.4 9.9 3.4 7.3c0-2.8 1.6-4.7 4-4.7Z"
+      fill={ICON_BLUE}
     />
-  </Svg>
-);
-
-// --- Category chip glyphs -------------------------------------------------
-// The Figma chips use 20x20 raster images (`freepik_..._Photoroom`) that could
-// not be exported; these Solar-style stand-ins keep the chip geometry intact.
-
-export const DumbbellIcon = ({ size = 24, color = '#000', weight = 1.6 }: GlyphProps) => (
-  <Svg {...linear(size)}>
-    <Path d="M6.5 9v6M4 10.2v3.6M17.5 9v6M20 10.2v3.6M8.5 12h7" stroke={color} strokeWidth={weight} strokeLinecap="round" />
-  </Svg>
-);
-
-export const DropletIcon = ({ size = 24, color = '#000', weight = 1.6 }: GlyphProps) => (
-  <Svg {...linear(size)}>
     <Path
-      d="M12 2.8c2.6 3 6.2 6.3 6.2 10.1a6.2 6.2 0 1 1-12.4 0C5.8 9.1 9.4 5.8 12 2.8Z"
-      stroke={color}
-      strokeWidth={weight}
-      strokeLinejoin="round"
+      d="M7.6 5.1c1 0 1.7.4 3 .4"
+      stroke="#FFFFFF"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      opacity={0.75}
     />
   </Svg>
 );
 
-export const ScissorsIcon = ({ size = 24, color = '#000', weight = 1.6 }: GlyphProps) => (
-  <Svg {...linear(size)}>
-    <Path d="M7.6 8.4 18 19M18 5 9.4 13.6" stroke={color} strokeWidth={weight} strokeLinecap="round" />
-    <Circle cx={6.2} cy={6.2} r={2.4} stroke={color} strokeWidth={weight} />
-    <Circle cx={6.2} cy={17.8} r={2.4} stroke={color} strokeWidth={weight} />
-  </Svg>
-);
-
-export const SmileIcon = ({ size = 24, color = '#000', weight = 1.6 }: GlyphProps) => (
-  <Svg {...linear(size)}>
-    <Circle cx={12} cy={12} r={9.2} stroke={color} strokeWidth={weight} />
-    <Path d="M8.4 14.2c.9 1.2 2.1 1.8 3.6 1.8s2.7-.6 3.6-1.8" stroke={color} strokeWidth={weight} strokeLinecap="round" />
-    <Path d="M9 9.3v.9M15 9.3v.9" stroke={color} strokeWidth={weight * 1.2} strokeLinecap="round" />
-  </Svg>
-);
-
-export const GLYPHS = {
-  dumbbell: DumbbellIcon,
-  droplet: DropletIcon,
-  scissors: ScissorsIcon,
-  smile: SmileIcon,
+export const CHIP_ICONS = {
+  fitness: DumbbellIcon,
+  skincare: BottleIcon,
+  hair: CombIcon,
+  oral: ToothIcon,
 } as const;
 
-export type GlyphName = keyof typeof GLYPHS;
+export type GlyphName = keyof typeof CHIP_ICONS;

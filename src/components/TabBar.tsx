@@ -165,6 +165,7 @@ function Tab({
 
   const idle = useAnimatedStyle(() => ({ opacity: 1 - sel.value }));
   const on = useAnimatedStyle(() => ({ opacity: sel.value }));
+  // Icons are 20x20 at (37, 8) inside each tab.
 
   return (
     <GestureDetector gesture={tap}>
@@ -174,7 +175,7 @@ function Tab({
             <Icon size={20} color={colors.tabIdle} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, on]}>
-            <Icon size={20} color={colors.tabActive} weight={2} />
+            <Icon size={20} color={colors.tabActive} weight={1.9} />
           </Animated.View>
         </Animated.View>
         <Animated.Text style={[type.tab, styles.label, labelStyle]}>{tab.label}</Animated.Text>
@@ -193,8 +194,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tabBar,
     paddingHorizontal: layout.tabInner,
     // A soft lift so the bar floats over the trail rather than sitting on it.
-    shadowColor: '#0F2540',
-    shadowOpacity: 0.12,
+    shadowColor: '#12466B',
+    shadowOpacity: 0.14,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 10,

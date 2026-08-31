@@ -26,25 +26,24 @@ Geometry is transcribed 1:1 from the frame — node positions, the 150px vertica
 rhythm, the 48px face over its 2px shadow, chip padding, the 354x61 tab bar at an
 18px inset, the 390x844 reference frame.
 
-**Colour, typography and imagery are NOT from the file.** The Figma MCP
-connection hit the account plan's tool-call limit immediately after returning the
-layer tree, so `get_design_context`, `get_screenshot` and `download_assets` all
-failed. That means these are placeholders standing in for the real design:
+Colour and type are read off a render of the frame, because the Figma MCP
+connection hit the account plan's tool-call limit right after returning the
+layer tree — `get_design_context`, `get_screenshot` and `download_assets` all
+came back capped, so no variables and no exports.
+
+Everything visual is therefore matched by eye, and these are redraws standing in
+for assets that could not be exported:
 
 | What | Currently | Figma layer it stands in for |
 | --- | --- | --- |
-| Whole palette | invented sky/green/amber set in `src/theme/tokens.ts` | — |
-| Type | Nunito | unknown |
-| Clouds | vector ellipse clusters | `07_Clouds 1`, `08_Clouds 1` |
-| Sun / blobs | radial gradients | `Ellipse 266`, `Ellipse 267` |
-| Warm haze | radial gradient | `image-from-rawpixel-id-6117623-png 3` |
-| Chip icons | Solar-style glyphs | `freepik_..._Photoroom` 20x20 rasters |
-| Node/tab icons | hand-drawn on Solar's 24px grid | `solar:play-bold`, `Interface / Check`, `Linear / ... Home Angle`, `Cart Large`, `Chart 2` |
-| Trail curve | spline threaded through the node centres | `Vector 4915` / `Vector 4916` |
-| Node corner radius | 16px squircle | unknown (frames, radius not exposed) |
+| Clouds | soft-edged ellipse clusters | `07_Clouds 1`, `08_Clouds 1`, `image-from-rawpixel-...` (photographic plates) |
+| Chip icons | flat redraws in the screen's blue/slate | `freepik_..._Photoroom` 20x20 rendered 3D icons |
+| Node/tab icons | drawn on Solar's 24px grid | `solar:play-bold`, `Interface / Check`, `Linear / ... Home Angle`, `Cart Large`, `Chart 2` |
+| Road curve | switchbacks reconstructed from the render | `Vector 4915` / `Vector 4916` |
+| Type | system font (SF Pro / Roboto) | unknown |
 
-Every colour and radius lives in `src/theme/tokens.ts`, so re-syncing is a
-one-file edit once the real values are available.
+Every colour, radius and road dimension lives in `src/theme/tokens.ts`, so
+re-syncing is a one-file edit once the real values are available.
 
 ## Layout
 
@@ -53,20 +52,28 @@ src/
   theme/tokens.ts      colours, Figma geometry, springs, header metrics
   data/paths.ts        the five lessons and four chips from the frame
   state/useProgress.ts persisted completion + lesson status resolution
-  lib/trail.ts         builds the winding path, arc lengths, polyline
+  lib/road.ts          builds the switchback road and its arc length
   icons/Glyphs.tsx     Solar-style vector icons
-  components/          Backdrop, SkillTrail, SkillNode, CategoryTabs,
+  components/          Backdrop, SkillRoad, SkillNode, CategoryTabs,
                        Header, TabBar, LessonSheet, Celebration
   screens/SkillPathScreen.tsx
 ```
 
 ## Motion
 
-- Trail draws itself on with an animated dash offset; the completed run is a
-  second stroke dashed to end exactly on a node's arc length.
+- The road draws itself on from the top with an animated dash offset, then its
+  centre line fades up and marches slowly along the surface.
 - Nodes spring in on a 70ms stagger.
-- Backdrop layers parallax against scroll at different rates and drift on a loop.
-- Node buttons press down onto their 2px shadow; locked ones shake.
-- The current node breathes a halo, and a spark travels the gap to it.
-- Chips and tab bar share one sliding pill; chips with no drawn path rubber-band.
-- Completing a lesson pops the node, extends the coloured trail and bursts confetti.
+- Cloud plates parallax against scroll at three rates and drift on long loops.
+- Nodes squash into their shadow on press; locked ones shake and buzz.
+- The lesson you're on breathes a halo ring.
+- Chips and the tab bar share one sliding pill; chips with no drawn path, and
+  tabs with no screen behind them, lean toward the tap and spring back.
+- Completing a lesson pops the node, unlocks the next and bursts confetti; the
+  tab bar drops away while the sheet is open.
+
+## Node states
+
+The frame draws three: a check on completed lessons, a play glyph on the one
+you're up to, and a keyhole on the rest. Progress persists via AsyncStorage, and
+the frame's starting state (two complete, the third current) is the seed.

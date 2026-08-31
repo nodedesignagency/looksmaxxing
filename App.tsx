@@ -1,9 +1,3 @@
-// Subpath imports so Metro bundles only these three faces, not all 16 weights.
-import Nunito_600SemiBold from '@expo-google-fonts/nunito/600SemiBold/Nunito_600SemiBold.ttf';
-import Nunito_700Bold from '@expo-google-fonts/nunito/700Bold/Nunito_700Bold.ttf';
-import Nunito_800ExtraBold from '@expo-google-fonts/nunito/800ExtraBold/Nunito_800ExtraBold.ttf';
-import { useFonts } from 'expo-font';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -17,17 +11,12 @@ import { colors } from './src/theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    Nunito_600SemiBold,
-    Nunito_700Bold,
-    Nunito_800ExtraBold,
-  });
-
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
+        {/* Dark glyphs, as the frame's status bar shows against the light sky. */}
         <StatusBar style="dark" />
-        {fontsLoaded ? <Shell /> : <Splash />}
+        <Shell />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -35,13 +24,7 @@ export default function App() {
 
 /** The sky, with nothing on it — so the first paint is never a white flash. */
 function Splash() {
-  return (
-    <LinearGradient
-      colors={[colors.skyTop, colors.skyMid, colors.skyLow, colors.skyBottom]}
-      locations={[0, 0.34, 0.68, 1]}
-      style={styles.root}
-    />
-  );
+  return <View style={styles.root} />;
 }
 
 function Shell() {
@@ -78,5 +61,5 @@ function Shell() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.skyMid },
+  root: { flex: 1, backgroundColor: colors.sky },
 });

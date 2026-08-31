@@ -20,7 +20,6 @@ type Props = {
   token: number;
   /** Where the burst originates, in screen coordinates. */
   origin: { x: number; y: number } | null;
-  accent: string;
 };
 
 const COUNT = 22;
@@ -36,10 +35,10 @@ type Spec = {
   radius: number;
 };
 
-export default function Celebration({ token, origin, accent }: Props) {
+export default function Celebration({ token, origin }: Props) {
   const palette = useMemo(
-    () => [accent, colors.doneFace, colors.currentFace, colors.surface, colors.openFace],
-    [accent],
+    () => [colors.xpBolt, colors.playGlyph, colors.cloud, colors.checkGlyph, colors.roadDash],
+    [],
   );
 
   const specs = useMemo<Spec[]>(() => {

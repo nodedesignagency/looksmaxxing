@@ -14,7 +14,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { BoltIcon, CheckIcon, LockIcon, PlayIcon, StarIcon } from '../icons/Glyphs';
+import { BoltIcon, CheckIcon, KeyholeIcon, PlayIcon } from '../icons/Glyphs';
 import type { Lesson } from '../data/paths';
 import type { LessonStatus } from '../state/useProgress';
 import { colors, layout, radii, springs, type } from '../theme/tokens';
@@ -28,74 +28,33 @@ type Props = {
   x: number;
   /** Top edge of the 50x50 node frame, in content coordinates. */
   y: number;
-  accent: string;
   onPress: (lesson: Lesson, status: LessonStatus) => void;
   /** Changes when the category switches, to replay the entrance. */
   drawKey: string;
 };
 
 const FACE = layout.nodeFace;
-const OFFSET = layout.nodeShadow;
 
-function faceColors(status: LessonStatus, accent: string) {
-  switch (status) {
-    case 'done':
-      return { face: colors.doneFace, shadow: colors.doneShadow, glyph: colors.onNode };
-    case 'current':
-      return { face: accent, shadow: shade(accent, 0.72), glyph: colors.onNode };
-    case 'open':
-      return { face: colors.surface, shadow: colors.lockedShadow, glyph: accent };
-    default:
-      return { face: colors.lockedFace, shadow: colors.lockedShadow, glyph: colors.lockedGlyph };
-  }
-}
-
-/** Multiplies a hex colour toward black, for the button's drop face. */
-function shade(hex: string, k: number) {
-  const n = parseInt(hex.replace('#', ''), 16);
-  const r = Math.round(((n >> 16) & 255) * k);
-  const g = Math.round(((n >> 8) & 255) * k);
-  const b = Math.round((n & 255) * k);
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
-export default function SkillNode({
-  lesson,
-  status,
-  index,
-  x,
-  y,
-  accent,
-  onPress,
-  drawKey,
-}: Props) {
-  const { face, shadow, glyph } = faceColors(status, accent);
+export default function SkillNode({ lesson, status, index, x, y, onPress, drawKey }: Props) {
   const locked = status === 'locked';
 
-  // Entrance
   const enter = useSharedValue(0);
-  // Press depth: 0 raised, 1 fully seated on its shadow.
   const press = useSharedValue(0);
-  // Denial shake for locked nodes.
   const shake = useSharedValue(0);
-  // Breathing halo on the lesson you're on.
   const halo = useSharedValue(0);
-  // Celebration pop when a lesson flips to done.
   const pop = useSharedValue(0);
 
   useEffect(() => {
     enter.value = 0;
-    enter.value = withDelay(
-      160 + index * 70,
-      withSpring(1, { damping: 13, stiffness: 190, mass: 0.9 }),
-    );
+    enter.value = withDelay(180 + index * 70, withSpring(1, springs.pop));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawKey]);
 
+  // A slow ring breathing off the lesson you're on.
   useEffect(() => {
     if (status === 'current') {
       halo.value = withRepeat(
-        withTiming(1, { duration: 1500, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: 1700, easing: Easing.out(Easing.quad) }),
         -1,
         false,
       );
@@ -105,7 +64,6 @@ export default function SkillNode({
     }
   }, [status, halo]);
 
-  // Pop the node the moment it becomes complete.
   const wasDone = React.useRef(status === 'done');
   useEffect(() => {
     if (status === 'done' && !wasDone.current) {
@@ -153,79 +111,55 @@ export default function SkillNode({
     opacity: enter.value,
     transform: [
       { translateX: shake.value * 7 },
-      { translateY: (1 - enter.value) * 22 },
-      { scale: 0.72 + enter.value * 0.28 + pop.value * 0.16 },
+      { translateY: (1 - enter.value) * 20 },
+      { scale: 0.76 + enter.value * 0.24 + pop.value * 0.14 },
     ],
   }));
 
+  // Circles read a press better as a squash into their shadow than a shove.
   const faceStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: press.value * OFFSET },
-      { translateY: press.value * OFFSET },
-    ],
+    transform: [{ scale: 1 - press.value * 0.09 }, { translateY: press.value * 2 }],
+    shadowOpacity: 0.18 * (1 - press.value * 0.7),
   }));
 
   const haloStyle = useAnimatedStyle(() => ({
-    opacity: (1 - halo.value) * 0.45,
-    transform: [{ scale: 1 + halo.value * 0.62 }],
+    opacity: (1 - halo.value) * 0.5,
+    transform: [{ scale: 1 + halo.value * 0.55 }],
   }));
 
   const labelStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - press.value * 0.03 }],
-    opacity: 0.45 + enter.value * 0.55,
   }));
 
   return (
-    <Animated.View
-      style={[styles.group, { left: x, top: y }, groupStyle]}
-      pointerEvents="box-none"
-    >
+    <Animated.View style={[styles.group, { left: x, top: y }, groupStyle]} pointerEvents="box-none">
       <GestureDetector gesture={tap}>
         <View style={styles.row}>
-          {/* 50x50 frame holding the 48x48 face over its 2px-offset shadow. */}
           <View style={styles.slot}>
             {status === 'current' && (
-              <Animated.View
-                style={[styles.halo, { backgroundColor: accent }, haloStyle]}
-                pointerEvents="none"
-              />
+              <Animated.View style={[styles.halo, haloStyle]} pointerEvents="none" />
             )}
-            <View style={[styles.shadow, { backgroundColor: shadow }]} />
-            <Animated.View style={[styles.face, { backgroundColor: face }, faceStyle]}>
-              <NodeGlyph status={status} color={glyph} />
+            <Animated.View
+              style={[
+                styles.face,
+                locked ? styles.faceLocked : styles.faceOpen,
+                faceStyle,
+              ]}
+            >
+              <NodeGlyph status={status} />
             </Animated.View>
           </View>
 
-          {/* Label block: title, then the "+25 XP" pill. */}
           <Animated.View style={[styles.label, labelStyle]}>
             <Text
-              style={[
-                type.nodeTitle,
-                { color: locked ? colors.inkFaint : colors.ink },
-              ]}
+              style={[type.nodeTitle, { color: locked ? colors.inkMuted : colors.ink }]}
               numberOfLines={1}
             >
               {lesson.title}
             </Text>
-            <View
-              style={[
-                styles.xpPill,
-                status === 'done' && { backgroundColor: 'rgba(63, 199, 123, 0.16)' },
-              ]}
-            >
-              <BoltIcon
-                size={11}
-                color={status === 'done' ? colors.doneShadow : colors.xpBolt}
-              />
-              <Text
-                style={[
-                  type.xp,
-                  styles.xpText,
-                  { color: status === 'done' ? colors.doneShadow : colors.xpText },
-                ]}
-              >
-                +{lesson.xp} XP
-              </Text>
+            <View style={[styles.xpPill, locked && styles.xpPillMuted]}>
+              <BoltIcon size={11} color={colors.xpBolt} />
+              <Text style={[type.xp, styles.xpText]}>+{lesson.xp} XP</Text>
             </View>
           </Animated.View>
         </View>
@@ -234,12 +168,10 @@ export default function SkillNode({
   );
 }
 
-function NodeGlyph({ status, color }: { status: LessonStatus; color: string }) {
-  // Icon sizes follow the Figma: check is 24x24 at (12,12), play is 16x16 at (16,16).
-  if (status === 'done') return <CheckIcon size={24} color={color} />;
-  if (status === 'current') return <StarIcon size={22} color={color} />;
-  if (status === 'open') return <PlayIcon size={16} color={color} />;
-  return <LockIcon size={18} color={color} />;
+function NodeGlyph({ status }: { status: LessonStatus }) {
+  if (status === 'done') return <CheckIcon size={24} color={colors.checkGlyph} weight={3} />;
+  if (status === 'current') return <PlayIcon size={19} color={colors.playGlyph} />;
+  return <KeyholeIcon size={22} color={colors.lockGlyph} />;
 }
 
 const styles = StyleSheet.create({
@@ -248,6 +180,7 @@ const styles = StyleSheet.create({
   slot: {
     width: layout.nodeSize,
     height: layout.nodeSize,
+    alignItems: 'flex-start',
   },
   halo: {
     position: 'absolute',
@@ -256,24 +189,27 @@ const styles = StyleSheet.create({
     width: FACE,
     height: FACE,
     borderRadius: radii.node,
-  },
-  shadow: {
-    position: 'absolute',
-    top: OFFSET,
-    left: OFFSET,
-    width: FACE,
-    height: FACE,
-    borderRadius: radii.node,
+    backgroundColor: colors.nodeFace,
   },
   face: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
     width: FACE,
     height: FACE,
     borderRadius: radii.node,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  faceOpen: {
+    backgroundColor: colors.nodeFace,
+    shadowColor: '#14405C',
+    shadowOpacity: 0.18,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  faceLocked: {
+    backgroundColor: colors.nodeLocked,
+    borderWidth: 1,
+    borderColor: colors.nodeLockedEdge,
   },
   label: {
     marginLeft: layout.labelOffsetX - layout.nodeSize,
@@ -281,7 +217,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   xpPill: {
-    marginTop: 6,
+    marginTop: 7,
     height: layout.xpPillHeight,
     flexDirection: 'row',
     alignItems: 'center',
@@ -289,5 +225,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: colors.xpChip,
   },
-  xpText: { marginLeft: 4 },
+  xpPillMuted: { backgroundColor: colors.xpChipMuted },
+  xpText: { marginLeft: 4, color: colors.xpText },
 });

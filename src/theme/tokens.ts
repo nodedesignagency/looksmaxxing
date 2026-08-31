@@ -1,177 +1,170 @@
 /**
- * Design tokens.
+ * Design tokens for the "Skill Path" frame (Figma 8f75PaORkRIvmfXHiThjdm,
+ * node 1:118, 390 x 844).
  *
- * Geometry (sizes, offsets, spacing) is transcribed 1:1 from the Figma frame
- * "Skill Path" (390 x 844, node 1:118).
- *
- * Colour + typography could not be read from Figma — the MCP connection hit the
- * plan's tool-call limit after returning the node tree — so the palette below is
- * an interpretation of the frame's structure (sky gradient, clouds, sun blobs,
- * winding trail). Everything visual lives in this one file: swapping in the real
- * Figma values only ever means editing here.
+ * Geometry comes from the frame's layer tree. Colour and type are read off the
+ * rendered frame, since the Figma MCP connection is capped on this account and
+ * could not return variables or exports.
  */
 
 export const colors = {
-  // Backdrop ---------------------------------------------------------------
-  skyTop: '#BFE3FF',
-  skyMid: '#DFF1FF',
-  skyLow: '#F3FAFF',
-  skyBottom: '#FFF3E2',
-
-  sun: '#FFD08A',
-  sunCore: '#FFE7BE',
-  blobCool: '#A9D8FF',
+  // Sky --------------------------------------------------------------------
+  skyTop: '#9BCCEB',
+  sky: '#88C0E3',
   cloud: '#FFFFFF',
 
+  // The road ---------------------------------------------------------------
+  road: '#FFFFFF',
+  /** Dashed centre line — a desaturated blue-grey on the white surface. */
+  roadDash: '#C3DAEA',
+  roadShadow: 'rgba(46, 96, 133, 0.14)',
+
   // Ink --------------------------------------------------------------------
-  ink: '#0F2540',
-  inkMuted: '#6D869E',
-  inkFaint: '#9DB2C6',
-
-  surface: '#FFFFFF',
-  surfaceSunk: '#EDF4FB',
-
-  // Trail ------------------------------------------------------------------
-  trailTrack: '#FFFFFF',
-  trailDot: '#B9CFE4',
-  trailDone: '#3FC77B',
+  ink: '#1D3F55',
+  inkMuted: '#7E9CB0',
+  title: '#FFFFFF',
 
   // Node states ------------------------------------------------------------
-  doneFace: '#3FC77B',
-  doneShadow: '#2A9E5E',
-  currentFace: '#FFB020',
-  currentShadow: '#D2870A',
-  openFace: '#3E8BFF',
-  openShadow: '#2765C4',
-  lockedFace: '#E1EAF3',
-  lockedShadow: '#C4D3E1',
-  lockedGlyph: '#9DB2C6',
+  nodeFace: '#FFFFFF',
+  nodeLocked: 'rgba(255, 255, 255, 0.42)',
+  nodeLockedEdge: 'rgba(255, 255, 255, 0.55)',
+  checkGlyph: '#2E5670',
+  playGlyph: '#4E88AE',
+  lockGlyph: '#8FAEC4',
 
-  onNode: '#FFFFFF',
+  // "+25 XP" pill ----------------------------------------------------------
+  xpChip: '#FFFFFF',
+  xpChipMuted: 'rgba(255, 255, 255, 0.5)',
+  xpBolt: '#3FBF6F',
+  xpText: '#5F7F94',
 
-  // XP ---------------------------------------------------------------------
-  xpBolt: '#FFB020',
-  xpText: '#B87708',
-  xpChip: 'rgba(255, 176, 32, 0.16)',
+  // Category chips ---------------------------------------------------------
+  chipIdle: 'rgba(255, 255, 255, 0.32)',
+  chipActive: 'rgba(255, 255, 255, 0.92)',
+  chipEdge: 'rgba(255, 255, 255, 0.5)',
 
-  // Chrome -----------------------------------------------------------------
-  chipIdle: 'rgba(255, 255, 255, 0.62)',
-  chipActive: '#0F2540',
-  chipActiveText: '#FFFFFF',
-  chipText: '#3D5771',
-
+  // Tab bar ----------------------------------------------------------------
   tabBar: '#FFFFFF',
-  tabPill: '#EAF3FF',
-  tabIdle: '#93A9BE',
-  tabActive: '#0F2540',
+  tabPill: '#DCEBF7',
+  tabIdle: '#1D3F55',
+  tabActive: '#4E88AE',
 
-  scrim: 'rgba(15, 37, 64, 0.42)',
+  surface: '#FFFFFF',
+  scrim: 'rgba(18, 52, 74, 0.4)',
 } as const;
 
-/** Frame 1:118 is 390 x 844 — the reference the Figma geometry is expressed in. */
+/** The frame the geometry below is expressed in. */
 export const DESIGN_WIDTH = 390;
 
 export const layout = {
-  /** Screen-edge gutter (title x=20, node column x=40 - 20 of node padding). */
+  /** Title x=20; the node column starts at x=40. */
   gutter: 20,
 
-  /** Node frame "Frame 2147236483" — 50x50 outer, 48x48 face, 2px shadow offset. */
+  /** "Frame 2147236483" — a 50x50 frame holding a 48x48 circular face. */
   nodeSize: 50,
   nodeFace: 48,
-  nodeShadow: 2,
 
   /** Measured y-deltas between node frames: 150, 150, 151, 148. */
   nodeSpacing: 150,
 
-  /** Node frame x positions from Figma, repeating: 40, 136, 40, 139. */
+  /** Node frame x positions, repeating: 40, 136, 40, 139. */
   nodeColumns: [40, 136, 40, 139],
 
-  /** Label block "Frame 2147236475" sits at (nodeX + 58, nodeY + 5), 40 tall. */
+  /** Label block "Frame 2147236475" at (nodeX + 58, nodeY + 5), 40 tall. */
   labelOffsetX: 58,
   labelOffsetY: 5,
 
-  /** XP pill "Frame 2147236470" — 54x19, bolt 6x11 at (6,4), text at (16,6). */
+  /** "Frame 2147236470" — the 54x19 XP pill. */
   xpPillHeight: 19,
 
-  /** First node frame sits at y=144, directly under the 143px-tall header block. */
-  firstNodeY: 144,
-
-  /** Header frame 1:184 is 219 tall; content ends at 143, the rest is a fade. */
-  headerFadeTo: 219,
-
-  /** Category chips row "Frame 2147236480" — 40 tall, 8px gaps, 20/10 padding. */
+  /** Category chips — 40 tall, 8px apart, 10px padding, 20x20 icon. */
   chipHeight: 40,
   chipGap: 8,
   chipPadding: 10,
   chipIcon: 20,
 
-  /** Tab bar "mainContainer" — 354x61 at (18, 763); 20px above the 844 baseline. */
+  /** "mainContainer" — 354x61 at (18, 763), 20px above the 844 baseline. */
   tabBarInset: 18,
   tabBarHeight: 61,
   tabBarBottomGap: 20,
   tabInner: 4,
 } as const;
 
+/**
+ * The road ("Vector 4915" / "Vector 4916", bounds x 75.5 -> 315).
+ *
+ * It snakes between two columns in rounded switchbacks, crossing over at the
+ * midpoint between each pair of nodes. The nodes themselves sit beside it, in
+ * whichever column the road is not currently occupying.
+ */
+export const road = {
+  width: 38,
+  /** Centre lines: 75.5 + width/2, and 315 - width/2. */
+  leftX: 94.5,
+  rightX: 296,
+  /** Corner radius of each switchback. */
+  corner: 50,
+  dash: { width: 3.5, on: 14, off: 15 },
+} as const;
+
 export const radii = {
-  node: 16,
+  /** Nodes are circles: half of the 48px face. */
+  node: 24,
   chip: 20,
   pill: 999,
   sheet: 28,
-  card: 20,
+  card: 18,
 } as const;
 
+/**
+ * System font throughout — the frame's type is a neutral grotesque, which is
+ * what San Francisco / Roboto already are on the two target platforms.
+ */
 export const type = {
-  /** "Skill Path" — 105x17 text box at (20,70). */
-  screenTitle: { fontFamily: 'Nunito_800ExtraBold', fontSize: 24, lineHeight: 30 },
-  /** Node titles — e.g. "Why Fitness Matters", 144x11. */
-  nodeTitle: { fontFamily: 'Nunito_700Bold', fontSize: 15, lineHeight: 19 },
-  /** "+25 XP" — 32x7. */
-  xp: { fontFamily: 'Nunito_800ExtraBold', fontSize: 10, lineHeight: 12 },
-  /** Chip labels — e.g. "Oral Posture", 90x11. */
-  chip: { fontFamily: 'Nunito_700Bold', fontSize: 15, lineHeight: 19 },
-  /** Tab labels — 78x13 boxes. */
-  tab: { fontFamily: 'Nunito_700Bold', fontSize: 11, lineHeight: 14 },
-  sheetTitle: { fontFamily: 'Nunito_800ExtraBold', fontSize: 22, lineHeight: 28 },
-  body: { fontFamily: 'Nunito_600SemiBold', fontSize: 14, lineHeight: 21 },
-  button: { fontFamily: 'Nunito_800ExtraBold', fontSize: 16, lineHeight: 20 },
+  /** "Skill Path" — a 105x17 text box at (20, 70). */
+  screenTitle: { fontSize: 26, lineHeight: 32, fontWeight: '700' },
+  /** Node titles, e.g. "Beginner Body weight" at 156x11. */
+  nodeTitle: { fontSize: 16, lineHeight: 20, fontWeight: '600' },
+  /** "+25 XP" at 32x7. */
+  xp: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  /** Chip labels, e.g. "Oral Posture" at 90x11. */
+  chip: { fontSize: 16, lineHeight: 20, fontWeight: '600' },
+  /** Tab labels in 78x13 boxes. */
+  tab: { fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  sheetTitle: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  button: { fontSize: 17, lineHeight: 22, fontWeight: '700' },
 } as const;
 
-/** Spring presets — one place so every gesture in the app feels related. */
+/** Spring presets, so every gesture in the app feels related. */
 export const springs = {
-  /** Snappy, for press/release on the 3D buttons. */
   press: { damping: 18, stiffness: 420, mass: 0.7 },
-  /** Bouncy, for entrances and celebratory pops. */
   pop: { damping: 12, stiffness: 220, mass: 0.9 },
-  /** Smooth, for sliding indicators. */
   glide: { damping: 20, stiffness: 180, mass: 0.8 },
 } as const;
 
 /**
- * Header geometry, derived from the Figma frame and re-based on the device's
- * safe-area inset (the frame's own status bar is 60px / a 59px inset).
+ * Header geometry, re-based on the device inset (the frame's own status bar is
+ * 60px tall, i.e. a 59px inset).
  *
- *   title   y=70   -> topInset + 11
- *   chips   y=103  -> topInset + 44   (a 33px title row)
+ *   title     y=70  -> topInset + 11
+ *   chips     y=103 -> topInset + 44
  *   chips end y=143 -> topInset + 84
- *   node 1  y=144  -> topInset + 85
+ *   node 1    y=144 -> topInset + 85
  *
- * The background is opaque behind the header content and fades out just past
- * it, so content scrolling up vanishes at the chip baseline while the first
- * node still sits fully crisp underneath.
+ * "Frame 2147236479" is 219 tall — 76px of it past the chips. That overhang is
+ * a scrim fading into the sky, which is why the first node reads as hazy in the
+ * design rather than fully crisp.
  */
 export function headerMetrics(topInset: number) {
   const titleTop = topInset + 11;
   const titleRow = 33;
   const contentEnd = titleTop + titleRow + layout.chipHeight;
-  const fade = 22;
   return {
     titleTop,
     titleRow,
     contentEnd,
-    /** Full height of the painted backdrop, including the fade. */
-    backdropHeight: contentEnd + fade,
-    /** Where the fade begins, as a 0-1 gradient stop. */
-    fadeStart: (contentEnd - 6) / (contentEnd + fade),
+    /** Full 219px header block, re-based on the inset. */
+    scrimHeight: topInset + 160,
     firstNodeY: contentEnd + 1,
   };
 }

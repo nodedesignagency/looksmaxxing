@@ -19,7 +19,6 @@ import { colors, radii, springs, type } from '../theme/tokens';
 type Props = {
   lesson: Lesson | null;
   status: LessonStatus;
-  accent: string;
   onClose: () => void;
   onComplete: (lesson: Lesson) => void;
 };
@@ -27,7 +26,7 @@ type Props = {
 /** How long the mock "lesson" runs before it counts as finished. */
 const RUN_MS = 1400;
 
-export default function LessonSheet({ lesson, status, accent, onClose, onComplete }: Props) {
+export default function LessonSheet({ lesson, status, onClose, onComplete }: Props) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const open = useSharedValue(0);
@@ -134,18 +133,18 @@ export default function LessonSheet({ lesson, status, accent, onClose, onComplet
           <View style={styles.grabber} />
 
           <View style={styles.head}>
-            <View style={[styles.badge, { backgroundColor: isDone ? colors.doneFace : accent }]}>
+            <View style={styles.badge}>
               {isDone ? (
-                <CheckIcon size={22} color={colors.onNode} />
+                <CheckIcon size={24} color={colors.checkGlyph} weight={3} />
               ) : (
-                <PlayIcon size={16} color={colors.onNode} />
+                <PlayIcon size={19} color={colors.playGlyph} />
               )}
             </View>
             <View style={styles.headText}>
               <Text style={[type.sheetTitle, { color: colors.ink }]}>{shown.title}</Text>
               <View style={styles.meta}>
                 <BoltIcon size={12} color={colors.xpBolt} />
-                <Text style={[type.body, { color: colors.xpText, marginLeft: 4 }]}>
+                <Text style={[type.xp, { color: colors.xpText, marginLeft: 4 }]}>
                   +{shown.xp} XP
                 </Text>
               </View>
@@ -153,23 +152,13 @@ export default function LessonSheet({ lesson, status, accent, onClose, onComplet
           </View>
 
           <GestureDetector gesture={button}>
-            <View
-              style={[
-                styles.cta,
-                { backgroundColor: isDone ? colors.surfaceSunk : accent },
-              ]}
-            >
+            <View style={[styles.cta, isDone && styles.ctaDone]}>
               {/* Fills left-to-right while the lesson runs. */}
               <Animated.View
                 style={[styles.ctaFill, progressStyle]}
                 pointerEvents="none"
               />
-              <Text
-                style={[
-                  type.button,
-                  { color: isDone ? colors.inkMuted : colors.onNode },
-                ]}
-              >
+              <Text style={[type.button, { color: isDone ? colors.inkMuted : colors.surface }]}>
                 {cta}
               </Text>
             </View>
@@ -198,16 +187,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.lockedShadow,
+    backgroundColor: colors.roadDash,
     marginBottom: 18,
   },
   head: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   badge: {
     width: 52,
     height: 52,
-    borderRadius: radii.node,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.tabPill,
   },
   headText: { flex: 1, marginLeft: 14 },
   meta: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
@@ -217,7 +207,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    backgroundColor: colors.playGlyph,
   },
+  ctaDone: { backgroundColor: colors.tabPill },
   ctaFill: {
     position: 'absolute',
     top: 0,

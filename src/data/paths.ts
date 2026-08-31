@@ -13,8 +13,6 @@ export type SkillPath = {
   /** Chip label from "Frame 2147236480". */
   label: string;
   glyph: GlyphName;
-  /** Accent used for this path's trail and current node. */
-  accent: string;
   lessons: Lesson[];
   /**
    * Lessons already complete. The frame shows the first two nodes with a check
@@ -34,8 +32,7 @@ export const PATHS: SkillPath[] = [
   {
     id: 'fitness',
     label: 'Fitness',
-    glyph: 'dumbbell',
-    accent: '#FF8A3D',
+    glyph: 'fitness',
     seedCompleted: 2,
     lessons: [
       { id: 'fit-1', title: 'Why Fitness Matters', xp },
@@ -45,9 +42,9 @@ export const PATHS: SkillPath[] = [
       { id: 'fit-5', title: 'Posture Correction', xp },
     ],
   },
-  { id: 'skincare', label: 'Skincare', glyph: 'droplet', accent: '#37B6C7', seedCompleted: 0, lessons: [] },
-  { id: 'hair', label: 'Hair', glyph: 'scissors', accent: '#8A6BFF', seedCompleted: 0, lessons: [] },
-  { id: 'oral', label: 'Oral Posture', glyph: 'smile', accent: '#F0568C', seedCompleted: 0, lessons: [] },
+  { id: 'skincare', label: 'Skincare', glyph: 'skincare', seedCompleted: 0, lessons: [] },
+  { id: 'hair', label: 'Hair', glyph: 'hair', seedCompleted: 0, lessons: [] },
+  { id: 'oral', label: 'Oral Posture', glyph: 'oral', seedCompleted: 0, lessons: [] },
 ];
 
 /** Chips that actually lead to a drawn path. */

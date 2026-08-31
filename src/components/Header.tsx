@@ -54,19 +54,20 @@ export default function Header({
   return (
     <View style={styles.wrap} pointerEvents="box-none">
       <Animated.View
-        style={[styles.backdrop, { height: m.backdropHeight }, fadeStyle]}
+        style={[styles.backdrop, { height: m.scrimHeight }, fadeStyle]}
         pointerEvents="none"
       >
+        {/* Sky-coloured, so the road and first node haze into it as designed. */}
         <LinearGradient
-          colors={['#BFE3FF', '#C6E6FF', 'rgba(203, 231, 255, 0)']}
-          locations={[0, m.fadeStart, 1]}
+          colors={[colors.skyTop, colors.skyTop, 'rgba(155, 204, 235, 0)']}
+          locations={[0, 0.42, 1]}
           style={StyleSheet.absoluteFill}
         />
       </Animated.View>
 
       <View style={{ paddingTop: m.titleTop }} pointerEvents="box-none">
         <Animated.View style={[styles.titleRow, { height: m.titleRow }, titleStyle]}>
-          <Text style={[type.screenTitle, { color: colors.ink }]}>Skill Path</Text>
+          <Text style={[type.screenTitle, styles.title]}>Skill Path</Text>
         </Animated.View>
 
         <CategoryTabs
@@ -83,6 +84,14 @@ export default function Header({
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', top: 0, left: 0, right: 0 },
   backdrop: { position: 'absolute', top: 0, left: 0, right: 0 },
+  title: {
+    color: colors.title,
+    // The frame sets the white title straight on the sky; a soft shadow keeps
+    // it legible where a bright cloud drifts underneath.
+    textShadowColor: 'rgba(31, 84, 118, 0.22)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',

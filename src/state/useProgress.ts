@@ -5,13 +5,10 @@ import { PATHS } from '../data/paths';
 const KEY = 'looksmaxxing/progress/v1';
 
 /**
- * How many lessons past the current one stay tappable. The Figma frame shows two
- * playable nodes ("Athletic", "Posture Correction") after the current one, so
- * the unlock window is two.
+ * The rendered frame shows three node states: a check on the two completed
+ * lessons, a play glyph on the one you're up to, and a keyhole on the rest.
  */
-export const OPEN_AHEAD = 2;
-
-export type LessonStatus = 'done' | 'current' | 'open' | 'locked';
+export type LessonStatus = 'done' | 'current' | 'locked';
 
 type Saved = {
   completed: Record<string, string[]>;
@@ -103,7 +100,6 @@ export function statusesFor(lessonIds: string[], completed: string[]): LessonSta
   return lessonIds.map((id, i) => {
     if (doneSet.has(id)) return 'done';
     if (i === currentIndex) return 'current';
-    if (i <= currentIndex + OPEN_AHEAD) return 'open';
     return 'locked';
   });
 }

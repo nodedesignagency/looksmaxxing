@@ -11,12 +11,12 @@ import Celebration from '../components/Celebration';
 import Header from '../components/Header';
 import LessonSheet from '../components/LessonSheet';
 import SkillNode from '../components/SkillNode';
-import SkillTrail from '../components/SkillTrail';
+import SkillRoad from '../components/SkillRoad';
 import { AVAILABLE_PATHS, PATHS } from '../data/paths';
 import type { Lesson } from '../data/paths';
-import { buildTrail } from '../lib/trail';
+import { buildRoad } from '../lib/road';
 import { statusesFor, type LessonStatus } from '../state/useProgress';
-import { DESIGN_WIDTH, headerMetrics, layout } from '../theme/tokens';
+import { DESIGN_WIDTH, headerMetrics, layout, road as roadTokens } from '../theme/tokens';
 
 type Props = {
   completedByPath: Record<string, string[]>;
@@ -45,11 +45,9 @@ export default function SkillPathScreen({
   const path = useMemo(() => PATHS.find((p) => p.id === activeId) ?? PATHS[0], [activeId]);
   const completed = completedByPath[path.id] ?? [];
 
-  // The Figma frame is 390 wide; scale the node columns so the zigzag keeps its
-  // proportions on wider handsets instead of hugging the left edge.
+  // The frame is 390 wide; scale x so the layout keeps its proportions on wider
+  // handsets rather than hugging the left edge.
   const scale = width / DESIGN_WIDTH;
-
-  /** Top of the first 50x50 node frame — y=144 in the Figma's 59px-inset frame. */
   const firstNodeY = headerMetrics(insets.top).firstNodeY;
 
   const nodes = useMemo(
@@ -64,34 +62,36 @@ export default function SkillPathScreen({
 
   const contentHeight =
     firstNodeY +
-    (path.lessons.length - 1) * layout.nodeSpacing +
+    Math.max(0, path.lessons.length - 1) * layout.nodeSpacing +
     layout.nodeSize +
     layout.tabBarHeight +
     layout.tabBarBottomGap +
     insets.bottom +
-    60;
+    70;
 
-  const trail = useMemo(
-    () =>
-      buildTrail(
-        // Centre of the 48x48 face inside each 50x50 node frame.
-        nodes.map((n) => ({ x: n.x + layout.nodeFace / 2, y: n.y + layout.nodeFace / 2 })),
-        { leadIn: firstNodeY + 60, leadOut: 200 },
-      ),
-    [nodes, firstNodeY],
-  );
+  /**
+   * The road switches column midway between each pair of nodes, which is what
+   * puts every node in the column the road has just left.
+   */
+  const road = useMemo(() => {
+    const centres = nodes.map((n) => n.y + layout.nodeFace / 2);
+    const crossings = centres.slice(0, -1).map((c, i) => (c + centres[i + 1]) / 2);
+    return buildRoad({
+      leftX: roadTokens.leftX * scale,
+      rightX: roadTokens.rightX * scale,
+      corner: roadTokens.corner,
+      crossings,
+      top: -60,
+      bottom: contentHeight + 40,
+      // Node 1 sits in the left column, so the road enters on the right.
+      startRight: true,
+    });
+  }, [nodes, scale, contentHeight]);
 
   const statuses = useMemo(
     () => statusesFor(path.lessons.map((l) => l.id), completed),
     [path, completed],
   );
-
-  const currentIndex = Math.max(0, statuses.indexOf('current'));
-  const doneCount = statuses.filter((s) => s === 'done').length;
-
-  // The coloured run of trail ends on the last node actually completed.
-  const progressLength = doneCount > 0 ? trail.lengthAt[doneCount - 1] : 0;
-  const currentLength = trail.lengthAt[currentIndex] ?? progressLength;
 
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
@@ -108,7 +108,6 @@ export default function SkillPathScreen({
       const i = path.lessons.findIndex((l) => l.id === lesson.id);
       const node = nodes[i];
       if (node) {
-        // Node centre in screen space, so the confetti erupts from the button.
         setBurstAt({
           x: node.x + layout.nodeFace / 2,
           y: node.y + layout.nodeFace / 2 - scrollY.value,
@@ -154,16 +153,7 @@ export default function SkillPathScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ height: contentHeight }}
       >
-        <SkillTrail
-          width={width}
-          height={contentHeight}
-          trail={trail}
-          progressLength={progressLength}
-          startLength={trail.lengthAt[0] ?? 0}
-          currentLength={currentLength}
-          accent={path.accent}
-          drawKey={path.id}
-        />
+        <SkillRoad width={width} height={contentHeight} road={road} drawKey={path.id} />
 
         {nodes.map((node, i) => (
           <SkillNode
@@ -173,7 +163,6 @@ export default function SkillPathScreen({
             index={i}
             x={node.x}
             y={node.y}
-            accent={path.accent}
             onPress={handleNodePress}
             drawKey={path.id}
           />
@@ -189,12 +178,11 @@ export default function SkillPathScreen({
         topInset={insets.top}
       />
 
-      <Celebration token={burst} origin={burstAt} accent={path.accent} />
+      <Celebration token={burst} origin={burstAt} />
 
       <LessonSheet
         lesson={selected?.lesson ?? null}
-        status={selected?.status ?? 'open'}
-        accent={path.accent}
+        status={selected?.status ?? 'current'}
         onClose={() => setSelected(null)}
         onComplete={handleComplete}
       />

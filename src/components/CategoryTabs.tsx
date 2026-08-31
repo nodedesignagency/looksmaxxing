@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolateColor,
@@ -11,7 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { GLYPHS } from '../icons/Glyphs';
+import { CHIP_ICONS } from '../icons/Glyphs';
 import type { SkillPath } from '../data/paths';
 import { colors, layout, radii, springs, type } from '../theme/tokens';
 
@@ -34,7 +34,7 @@ type Props = {
 
 type Slot = { x: number; width: number };
 
-const CHIP_IDLE = 'rgba(255, 255, 255, 0.62)';
+const CHIP_IDLE = colors.chipIdle;
 const CHIP_CLEAR = 'rgba(255, 255, 255, 0)';
 
 export default function CategoryTabs({ paths, activeId, available, onChange }: Props) {
@@ -127,7 +127,7 @@ function Chip({
   onPress: (id: string) => void;
   onMeasure: (id: string, slot: Slot) => void;
 }) {
-  const Glyph = GLYPHS[path.glyph];
+  const Icon = CHIP_ICONS[path.glyph];
   const sel = useSharedValue(selected ? 1 : 0);
   const press = useSharedValue(0);
   const id = path.id;
@@ -157,13 +157,6 @@ function Chip({
     backgroundColor: interpolateColor(sel.value, [0, 1], [CHIP_IDLE, CHIP_CLEAR]),
   }));
 
-  const textStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(sel.value, [0, 1], [colors.chipText, colors.chipActiveText]),
-  }));
-
-  const idleIcon = useAnimatedStyle(() => ({ opacity: 1 - sel.value }));
-  const activeIcon = useAnimatedStyle(() => ({ opacity: sel.value }));
-
   return (
     <GestureDetector gesture={tap}>
       <Animated.View
@@ -173,14 +166,9 @@ function Chip({
         }
       >
         <View style={styles.chipIcon}>
-          <Animated.View style={[StyleSheet.absoluteFill, idleIcon]}>
-            <Glyph size={layout.chipIcon} color={colors.chipText} />
-          </Animated.View>
-          <Animated.View style={[StyleSheet.absoluteFill, activeIcon]}>
-            <Glyph size={layout.chipIcon} color={colors.chipActiveText} />
-          </Animated.View>
+          <Icon size={layout.chipIcon} />
         </View>
-        <Animated.Text style={[type.chip, styles.chipText, textStyle]}>{path.label}</Animated.Text>
+        <Text style={[type.chip, styles.chipText]}>{path.label}</Text>
       </Animated.View>
     </GestureDetector>
   );
@@ -201,9 +189,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.chipPadding,
     marginRight: layout.chipGap,
     borderRadius: radii.chip,
+    borderWidth: 1,
+    borderColor: colors.chipEdge,
   },
   chipIcon: { width: layout.chipIcon, height: layout.chipIcon },
-  chipText: { marginLeft: 6 },
+  chipText: { marginLeft: 6, color: colors.ink },
   pill: {
     position: 'absolute',
     left: 0,
@@ -211,5 +201,7 @@ const styles = StyleSheet.create({
     height: layout.chipHeight,
     borderRadius: radii.chip,
     backgroundColor: colors.chipActive,
+    borderWidth: 1,
+    borderColor: colors.chipEdge,
   },
 });
