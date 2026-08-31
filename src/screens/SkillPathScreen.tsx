@@ -12,7 +12,7 @@ import Header from '../components/Header';
 import LessonSheet from '../components/LessonSheet';
 import SkillNode from '../components/SkillNode';
 import SkillRoad from '../components/SkillRoad';
-import { AVAILABLE_PATHS, PATHS } from '../data/paths';
+import { PATHS } from '../data/paths';
 import type { Lesson } from '../data/paths';
 import { buildRoad } from '../lib/road';
 import { statusesFor, type LessonStatus } from '../state/useProgress';
@@ -60,6 +60,7 @@ export default function SkillPathScreen({
     [path, scale, firstNodeY],
   );
 
+  /** Last node's bottom edge, plus just enough to clear the floating tab bar. */
   const contentHeight =
     firstNodeY +
     Math.max(0, path.lessons.length - 1) * layout.nodeSpacing +
@@ -67,7 +68,7 @@ export default function SkillPathScreen({
     layout.tabBarHeight +
     layout.tabBarBottomGap +
     insets.bottom +
-    70;
+    24;
 
   /**
    * The road switches column midway between each pair of nodes, which is what
@@ -81,8 +82,8 @@ export default function SkillPathScreen({
       rightX: roadTokens.rightX * scale,
       corner: roadTokens.corner,
       crossings,
-      top: -60,
-      bottom: contentHeight + 40,
+      top: -80,
+      bottom: contentHeight + 120,
       // Node 1 sits in the left column, so the road enters on the right.
       startRight: true,
     });
@@ -172,9 +173,7 @@ export default function SkillPathScreen({
       <Header
         paths={PATHS}
         activeId={activeId}
-        available={AVAILABLE_PATHS}
         onChange={handleCategory}
-        scrollY={scrollY}
         topInset={insets.top}
       />
 

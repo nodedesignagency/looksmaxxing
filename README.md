@@ -85,10 +85,18 @@ src/
 - Cloud plates parallax against scroll at three rates and drift on long loops.
 - Nodes squash into their shadow on press; locked ones shake and buzz.
 - The lesson you're on breathes a halo ring.
-- Chips and the tab bar share one sliding pill; chips with no drawn path, and
-  tabs with no screen behind them, lean toward the tap and spring back.
+- Chips and the tab bar share one sliding pill. Chips switch category, which
+  replays the road draw-on and the node stagger for that path; tabs with no
+  screen behind them lean toward the tap and spring back.
 - Completing a lesson pops the node, unlocks the next and bursts confetti; the
   tab bar drops away while the sheet is open.
+
+## Lessons
+
+Each of the four chips has its own road. The first five Fitness lessons are
+transcribed from the frame verbatim; everything after them in `src/data/paths.ts`
+is placeholder text, there so each category has a road long enough to travel.
+Replace those entries when real curriculum exists — nothing else reads them.
 
 ## Node states
 

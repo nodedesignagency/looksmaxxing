@@ -48,7 +48,7 @@ export default function TabBar({
 }: Props) {
   const { width } = useWindowDimensions();
   const barWidth = width - layout.tabBarInset * 2;
-  const slot = (barWidth - layout.tabInner * 2) / TABS.length;
+  const slot = barWidth / TABS.length;
 
   const index = Math.max(
     0,
@@ -77,7 +77,7 @@ export default function TabBar({
   );
 
   const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: layout.tabInner + pill.value * slot }],
+    transform: [{ translateX: pill.value * slot + layout.tabInner }],
   }));
 
   const away = useSharedValue(0);
@@ -104,7 +104,9 @@ export default function TabBar({
       pointerEvents={hidden ? 'none' : 'auto'}
     >
       <View style={styles.bar}>
-        <Animated.View style={[styles.pill, { width: slot }, pillStyle]} />
+        <Animated.View
+          style={[styles.pill, { width: slot - layout.tabInner * 2 }, pillStyle]}
+        />
         {TABS.map((tab) => (
           <Tab
             key={tab.key}
@@ -192,7 +194,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radii.chip + 4,
     backgroundColor: colors.tabBar,
-    paddingHorizontal: layout.tabInner,
     // A soft lift so the bar floats over the trail rather than sitting on it.
     shadowColor: '#12466B',
     shadowOpacity: 0.14,

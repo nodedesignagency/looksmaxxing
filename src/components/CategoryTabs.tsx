@@ -1,13 +1,12 @@
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolateColor,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -16,28 +15,31 @@ import type { SkillPath } from '../data/paths';
 import { colors, layout, radii, springs, type } from '../theme/tokens';
 
 /**
- * "Frame 2147236480" — a 445px-wide row of 40px chips inside a 390px frame, so
- * it scrolls horizontally. Chip metrics from Figma: 10px padding, a 20x20 icon,
+ * "Frame 2147236480" — a row of 40px chips wider than the 390px frame, so it
+ * scrolls horizontally. Chip metrics from Figma: 10px padding, a 20x20 icon,
  * text starting at x=36, 8px between chips.
  *
- * The selected state is a single pill that springs between chips rather than
- * four backgrounds toggling, so switching category reads as one movement.
+ * Selection is one white pill that springs between chips, rather than four
+ * backgrounds toggling, so switching category reads as a single movement.
+ *
+ * The row deliberately carries no horizontal padding: the pill is absolutely
+ * positioned and measured against each chip's laid-out x, and Yoga offsets
+ * absolute children by the parent's padding while CSS does not — so any padding
+ * here would put the pill in the right place on web and the wrong place on
+ * device. The gutters are chip margins instead.
  */
 
 type Props = {
   paths: SkillPath[];
   activeId: string;
-  /** Chip ids that lead to a drawn path. Others lean and spring back. */
-  available: string[];
   onChange: (id: string) => void;
 };
 
 type Slot = { x: number; width: number };
 
-const CHIP_IDLE = colors.chipIdle;
 const CHIP_CLEAR = 'rgba(255, 255, 255, 0)';
 
-export default function CategoryTabs({ paths, activeId, available, onChange }: Props) {
+export default function CategoryTabs({ paths, activeId, onChange }: Props) {
   const [slots, setSlots] = useState<Record<string, Slot>>({});
   const scroller = useRef<ScrollView>(null);
 
@@ -76,23 +78,10 @@ export default function CategoryTabs({ paths, activeId, available, onChange }: P
   const select = useCallback(
     (id: string) => {
       if (id === activeId) return;
-      if (available.includes(id)) {
-        Haptics.selectionAsync().catch(() => {});
-        onChange(id);
-        return;
-      }
-      // No path is drawn behind this chip: lean the pill toward the tap and
-      // spring it back, rather than switching to an empty trail.
-      const target = slots[id];
-      if (!active || !target) return;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      const lean = active.x + (target.x - active.x) * 0.26;
-      pillX.value = withSequence(
-        withSpring(lean, { damping: 18, stiffness: 420 }),
-        withSpring(active.x, { damping: 14, stiffness: 240 }),
-      );
+      Haptics.selectionAsync().catch(() => {});
+      onChange(id);
     },
-    [active, activeId, available, onChange, pillX, slots],
+    [activeId, onChange],
   );
 
   return (
@@ -103,11 +92,13 @@ export default function CategoryTabs({ paths, activeId, available, onChange }: P
       contentContainerStyle={styles.row}
     >
       <Animated.View style={[styles.pill, pillStyle]} />
-      {paths.map((path) => (
+      {paths.map((path, i) => (
         <Chip
           key={path.id}
           path={path}
           selected={path.id === activeId}
+          first={i === 0}
+          last={i === paths.length - 1}
           onMeasure={measure}
           onPress={select}
         />
@@ -119,11 +110,15 @@ export default function CategoryTabs({ paths, activeId, available, onChange }: P
 function Chip({
   path,
   selected,
+  first,
+  last,
   onPress,
   onMeasure,
 }: {
   path: SkillPath;
   selected: boolean;
+  first: boolean;
+  last: boolean;
   onPress: (id: string) => void;
   onMeasure: (id: string, slot: Slot) => void;
 }) {
@@ -154,13 +149,17 @@ function Chip({
   const chipStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - press.value * 0.05 }],
     // Fade the chip's own background out so the sliding pill shows through.
-    backgroundColor: interpolateColor(sel.value, [0, 1], [CHIP_IDLE, CHIP_CLEAR]),
+    backgroundColor: interpolateColor(sel.value, [0, 1], [colors.chipIdle, CHIP_CLEAR]),
   }));
 
   return (
     <GestureDetector gesture={tap}>
       <Animated.View
-        style={[styles.chip, chipStyle]}
+        style={[
+          styles.chip,
+          { marginLeft: first ? layout.gutter : 0, marginRight: last ? layout.gutter : layout.chipGap },
+          chipStyle,
+        ]}
         onLayout={(e) =>
           onMeasure(id, { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width })
         }
@@ -168,26 +167,19 @@ function Chip({
         <View style={styles.chipIcon}>
           <Icon size={layout.chipIcon} />
         </View>
-        <Text style={[type.chip, styles.chipText]}>{path.label}</Text>
+        <Animated.Text style={[type.chip, styles.chipText]}>{path.label}</Animated.Text>
       </Animated.View>
     </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: layout.gutter,
-    paddingRight: layout.gutter + 8,
-    height: layout.chipHeight,
-  },
+  row: { flexDirection: 'row', alignItems: 'center', height: layout.chipHeight },
   chip: {
     height: layout.chipHeight,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: layout.chipPadding,
-    marginRight: layout.chipGap,
     borderRadius: radii.chip,
     borderWidth: 1,
     borderColor: colors.chipEdge,
