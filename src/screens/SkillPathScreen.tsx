@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Backdrop from '../components/Backdrop';
 import Celebration from '../components/Celebration';
 import Header from '../components/Header';
+import LessonPlayer from './LessonPlayer';
 import LessonSheet from '../components/LessonSheet';
 import SkillNode from '../components/SkillNode';
 import SkillRoad from '../components/SkillRoad';
@@ -37,6 +38,8 @@ export default function SkillPathScreen({
   const [selected, setSelected] = useState<{ lesson: Lesson; status: LessonStatus } | null>(null);
   const [burst, setBurst] = useState(0);
   const [burstAt, setBurstAt] = useState<{ x: number; y: number } | null>(null);
+  /** The lesson currently running its interlude, if any. */
+  const [playing, setPlaying] = useState<Lesson | null>(null);
 
   const scrollY = useSharedValue(0);
   const scroller = useAnimatedRef<Animated.ScrollView>();
@@ -103,22 +106,30 @@ export default function SkillPathScreen({
     setSelected({ lesson, status });
   }, []);
 
-  const handleComplete = useCallback(
-    (lesson: Lesson) => {
-      const i = path.lessons.findIndex((l) => l.id === lesson.id);
-      const node = nodes[i];
-      if (node) {
-        setBurstAt({
-          x: node.x + layout.nodeFace / 2,
-          y: node.y + layout.nodeFace / 2 - scrollY.value,
-        });
-        setBurst((n) => n + 1);
-      }
-      onComplete(path.id, lesson);
-      // The sheet stays open on its result card; CONTINUE dismisses it.
-    },
-    [nodes, onComplete, path, scrollY],
-  );
+  /** Start pressed: hand off to the interlude and get the sheet out of the way. */
+  const handleStart = useCallback((lesson: Lesson) => {
+    setSelected(null);
+    setPlaying(lesson);
+  }, []);
+
+  /** Interlude finished: bank the XP, burst confetti, bring back the result. */
+  const handlePlayerDone = useCallback(() => {
+    const lesson = playing;
+    setPlaying(null);
+    if (!lesson) return;
+
+    const i = path.lessons.findIndex((l) => l.id === lesson.id);
+    const node = nodes[i];
+    if (node) {
+      setBurstAt({
+        x: node.x + layout.nodeFace / 2,
+        y: node.y + layout.nodeFace / 2 - scrollY.value,
+      });
+      setBurst((n) => n + 1);
+    }
+    onComplete(path.id, lesson);
+    setSelected({ lesson, status: 'done' });
+  }, [playing, nodes, onComplete, path, scrollY]);
 
   const handleCategory = useCallback(
     (id: string) => {
@@ -130,8 +141,8 @@ export default function SkillPathScreen({
   );
 
   React.useEffect(() => {
-    onSheetOpenChange(selected !== null);
-  }, [selected, onSheetOpenChange]);
+    onSheetOpenChange(selected !== null || playing !== null);
+  }, [selected, playing, onSheetOpenChange]);
 
   return (
     <View style={styles.root}>
@@ -173,8 +184,10 @@ export default function SkillPathScreen({
         lesson={selected?.lesson ?? null}
         status={selected?.status ?? 'current'}
         onClose={() => setSelected(null)}
-        onComplete={handleComplete}
+        onStart={handleStart}
       />
+
+      <LessonPlayer visible={playing !== null} onDone={handlePlayerDone} />
     </View>
   );
 }

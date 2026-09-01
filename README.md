@@ -112,16 +112,31 @@ transcribed from the frame verbatim; everything after them in `src/data/paths.ts
 is placeholder text, there so each category has a road long enough to travel.
 Replace those entries when real curriculum exists — nothing else reads them.
 
-## The lesson panel
+## The lesson flow
 
-Tapping a node opens a brief — the node's own circle, its title, its XP — and
-"start" fills the button across while the lesson runs. When it lands the panel
-turns green and becomes a result card with a check, "Awesome!" and the XP
-earned; that is the beat the confetti fires on and the node behind flips to a
-check. It stays until CONTINUE dismisses it.
+Tap a node and a brief slides up. Start hands off to a full-screen interlude,
+and when that ends the panel comes back green as a result card — check,
+"Awesome!", XP earned — which is the beat the confetti fires on and the node
+behind flips to a check. CONTINUE dismisses it.
+
+The panel's top edge is a row of semicircles rather than a rounded rectangle,
+so it reads as a bank of cloud. Bump height is always half its width, so the
+uneven widths in `CloudEdge` are the whole shape; there is nothing to line up.
 
 Buttons use the node's construction at a larger scale: a face over a darker
 plate, pressed down onto it. The nodes offset by 2px, a button by 4.
+
+### The interlude clip
+
+`src/data/lessonClip.ts` holds the clip that plays during a lesson. Nothing
+ships there, so the player falls back to a scene it draws itself — a turntable,
+a level meter and notes coming off the top — and the flow works with no asset
+at all.
+
+To use a real clip, drop it in as `assets/lesson-clip.mp4` and uncomment the
+`require` in that file. It has to be **H.264 in an .mp4**; iOS will not play
+WebM. `CLIP_SECONDS` sets how long the interlude runs, and it is always
+skippable.
 
 ## Node states
 
