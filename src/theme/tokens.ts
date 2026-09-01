@@ -152,8 +152,8 @@ export const fonts = {
 } as const;
 
 export const type = {
-  /** "Skill Path" — a 105x17 text box at (20, 70). */
-  screenTitle: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 32 },
+  /** "Skill Path" — Geist SemiBold 24, tracking -2%, in a 105x17 box. */
+  screenTitle: { fontFamily: fonts.semiBold, fontSize: 24, lineHeight: 30, letterSpacing: -0.48 },
   /** Node titles — Geist Regular 16, tracking -2%. */
   nodeTitle: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.32 },
   /** "+25 XP" — Geist Regular 10, tracking -2.8%. */

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolateColor,
@@ -18,6 +18,13 @@ import { colors, layout, radii, springs, type } from '../theme/tokens';
  * "mainContainer" / "tabPills" — 354x61 at (18, 763), i.e. 18px side margins and
  * 20px above the 844 baseline. Tabs are 4px inset, with a 20x20 icon 8px from
  * the top and the label below it.
+ *
+ * The active highlight is a child of its own tab, not a pill positioned over
+ * the bar. Sliding one between tabs meant computing its offset against the
+ * bar's layout, and it kept landing a few points out — Yoga and CSS disagree on
+ * whether an absolutely positioned child clears its parent's padding, so it was
+ * correct in a browser and wrong on device. A highlight the tab owns has
+ * nothing to compute.
  */
 
 export type TabKey = 'home' | 'path' | 'shop' | 'progress';
@@ -46,39 +53,14 @@ export default function TabBar({
   hidden = false,
   available = ['path'],
 }: Props) {
-  const { width } = useWindowDimensions();
-  const barWidth = width - layout.tabBarInset * 2;
-  const slot = barWidth / TABS.length;
-
-  const index = Math.max(
-    0,
-    TABS.findIndex((t) => t.key === active),
-  );
-  const pill = useSharedValue(index);
-
-  useEffect(() => {
-    pill.value = withSpring(index, springs.glide);
-  }, [index, pill]);
-
   const select = React.useCallback(
     (key: TabKey) => {
-      if (available.includes(key)) {
-        onChange(key);
-        return;
-      }
-      // Nothing lives here yet: lean the pill toward the tap, then snap back.
-      const target = TABS.findIndex((t) => t.key === key);
-      pill.value = withSequence(
-        withSpring(index + (target - index) * 0.32, { damping: 18, stiffness: 420 }),
-        withSpring(index, { damping: 14, stiffness: 260 }),
-      );
+      if (available.includes(key)) onChange(key);
+      // Nothing lives behind the other tabs yet; the press is answered by the
+      // tab's own bounce and nothing else moves.
     },
-    [available, index, onChange, pill],
+    [available, onChange],
   );
-
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: pill.value * slot + layout.tabInner }],
-  }));
 
   const away = useSharedValue(0);
   useEffect(() => {
@@ -104,9 +86,6 @@ export default function TabBar({
       pointerEvents={hidden ? 'none' : 'auto'}
     >
       <View style={styles.bar}>
-        <Animated.View
-          style={[styles.pill, { width: slot - layout.tabInner * 2 }, pillStyle]}
-        />
         {TABS.map((tab) => (
           <Tab
             key={tab.key}
@@ -167,11 +146,14 @@ function Tab({
 
   const idle = useAnimatedStyle(() => ({ opacity: 1 - sel.value }));
   const on = useAnimatedStyle(() => ({ opacity: sel.value }));
+  const pillStyle = useAnimatedStyle(() => ({ opacity: sel.value }));
   // Icons are 20x20 at (37, 8) inside each tab.
 
   return (
     <GestureDetector gesture={tap}>
       <View style={styles.tab}>
+        {/* Owned by the tab, so it is centred by layout rather than arithmetic. */}
+        <Animated.View style={[styles.pill, pillStyle]} pointerEvents="none" />
         <Animated.View style={[styles.icon, iconStyle]}>
           <Animated.View style={[StyleSheet.absoluteFill, idle]}>
             <Icon size={20} color={colors.tabIdle} />
@@ -205,19 +187,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 8,
   },
-  pill: {
-    position: 'absolute',
-    left: 0,
-    top: layout.tabInner,
-    height: layout.tabBarHeight - layout.tabInner * 2,
-    borderRadius: radii.tabPill,
-    backgroundColor: colors.tabPill,
-  },
   tab: {
     flex: 1,
     height: layout.tabBarHeight - layout.tabInner * 2,
     alignItems: 'center',
-    paddingTop: 8,
+    justifyContent: 'center',
+    paddingTop: 4,
+  },
+  pill: {
+    position: 'absolute',
+    top: 0,
+    left: 2,
+    right: 2,
+    bottom: 0,
+    borderRadius: radii.tabPill,
+    backgroundColor: colors.tabPill,
   },
   icon: { width: 20, height: 20 },
   label: { marginTop: 4 },

@@ -88,14 +88,21 @@ pixels apart, the lower one showing through as a crescent. Pressing a node
 slides the face those two pixels onto its plate, closing the gap the depth is
 made of.
 
-Still redrawn, because they are raster fills that could not be exported:
+## Assets
 
-| What | Currently | Figma layer |
-| --- | --- | --- |
-| Clouds | soft-edged ellipse clusters | `07_Clouds 1`, `08_Clouds 1`, `image-from-rawpixel-...` |
-| Chip icons | flat redraws in `588AAB` | `freepik_..._Photoroom` 20x20 rendered 3D icons |
-| Node/tab icons | drawn on Solar's 24px grid | `solar:play-bold`, `Interface / Check`, `Linear / ... Home Angle`, `Cart Large`, `Chart 2` |
-| Road curve | switchbacks reconstructed from the render | `Vector 4915` / `Vector 4916` |
+The design's own exports now live under `assets/` — cloud plates, the four chip
+sprites, and the icons. `metro.config.js` runs `react-native-svg-transformer`,
+so a `.svg` imports as a component; their colours were rewritten to
+`currentColor` and each takes a `color` prop.
+
+Play and lock came out of Figma as a solid rect masked by an embedded raster.
+Rather than lean on SVG masks and patterns — the least portable corner of the
+spec — the raster is extracted to `assets/icons/*.png` and tinted at runtime.
+Same artwork, none of the risk.
+
+Only two glyphs are still drawn by hand, because the export did not include
+them: the Shop cart and the XP bolt. The road's switchbacks are also
+reconstructed rather than taken from `Vector 4915` / `Vector 4916`.
 
 Every colour, radius and road dimension lives in `src/theme/tokens.ts`.
 
