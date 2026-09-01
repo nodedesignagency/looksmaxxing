@@ -10,10 +10,11 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { G, Path } from 'react-native-svg';
 import { colors } from '../theme/tokens';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedG = Animated.createAnimatedComponent(G);
 
 /**
  * The billowing top edge of the lesson panel.
@@ -34,9 +35,12 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
  * Insetting means an arc can never stray outside the silhouette, so nothing
  * needs clipping.
  *
- * The whole edge then drifts and stretches on long, mismatched loops. Scaling
- * horizontally moves the lobes relative to each other, so the shape genuinely
- * billows instead of sliding about rigidly.
+ * Every lobe then rises, falls and slides on its own loop, at its own period.
+ * Moving the edge as one rigid piece is barely legible as motion; moving the
+ * lobes against each other is what actually reads as billowing, because the
+ * valleys between them deepen and fill as they go. Each lobe keeps its own
+ * fill-then-arc pair inside its group, so the interleaved draw order — and with
+ * it the depth — survives the animation.
  */
 
 /**
@@ -45,12 +49,12 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
  * centres sit past the edges so the corners stay covered.
  */
 const LOBES = [
-  { cx: -0.02, r: 0.115 },
-  { cx: 0.15, r: 0.135 },
-  { cx: 0.38, r: 0.19 },
-  { cx: 0.6, r: 0.13 },
-  { cx: 0.79, r: 0.155 },
-  { cx: 0.98, r: 0.125 },
+  { cx: -0.02, r: 0.115, rise: 7, sway: 5, period: 5200 },
+  { cx: 0.15, r: 0.135, rise: 9, sway: 6, period: 6900 },
+  { cx: 0.38, r: 0.19, rise: 11, sway: 4, period: 8300 },
+  { cx: 0.6, r: 0.13, rise: 8, sway: 6, period: 5900 },
+  { cx: 0.79, r: 0.155, rise: 10, sway: 5, period: 7400 },
+  { cx: 0.98, r: 0.125, rise: 7, sway: 4, period: 6300 },
 ];
 
 const MAX_R = Math.max(...LOBES.map((l) => l.r));
@@ -72,29 +76,27 @@ function circle(x: number, y: number, r: number) {
   );
 }
 
-type Layer = { kind: 'fill' | 'arc'; d: string };
-
 function buildPaths(width: number, height: number) {
   const canvas = width + BLEED * 2;
   const inset = Math.max(4, width * 0.012);
+  // Deep enough that a lobe sinking to the bottom of its travel cannot lift the
+  // base off the panel body.
+  const skirt = `M 0 ${(height - 16).toFixed(2)} H ${canvas.toFixed(2)} V ${height.toFixed(
+    2,
+  )} H 0 Z`;
 
-  // A sliver along the bottom first, so no antialiasing seam opens against the
-  // body sitting directly beneath.
-  const layers: Layer[] = [
-    {
-      kind: 'fill',
-      d: `M 0 ${(height - 4).toFixed(2)} H ${canvas.toFixed(2)} V ${height.toFixed(2)} H 0 Z`,
-    },
-  ];
-
-  for (const { cx, r } of LOBES) {
-    const x = BLEED + cx * width;
+  const lobes = LOBES.map(({ cx, r, rise, sway, period }) => {
     const rad = r * width;
-    layers.push({ kind: 'fill', d: circle(x, height, rad) });
-    layers.push({ kind: 'arc', d: circle(x, height, Math.max(2, rad - inset)) });
-  }
+    return {
+      fill: circle(BLEED + cx * width, height, rad),
+      arc: circle(BLEED + cx * width, height, Math.max(2, rad - inset)),
+      rise,
+      sway,
+      period,
+    };
+  });
 
-  return { canvas, layers };
+  return { canvas, skirt, lobes };
 }
 
 type Props = {
@@ -107,31 +109,10 @@ type Props = {
 
 export default function CloudEdge({ width, progress, from, to }: Props) {
   const height = cloudEdgeHeight(width);
-  const { canvas, layers } = React.useMemo(
+  const { canvas, skirt, lobes } = React.useMemo(
     () => buildPaths(width, height),
     [width, height],
   );
-
-  // Three loops of different length, so the shape never repeats a pose exactly.
-  const drift = useSharedValue(0);
-  const swell = useSharedValue(0);
-  const bob = useSharedValue(0);
-
-  React.useEffect(() => {
-    const loop = (v: SharedValue<number>, duration: number) =>
-      withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, true);
-    drift.value = loop(drift, 9000);
-    swell.value = loop(swell, 6500);
-    bob.value = loop(bob, 4700);
-  }, [drift, swell, bob]);
-
-  const motion = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: (drift.value - 0.5) * 9 },
-      { translateY: (bob.value - 0.5) * 4 },
-      { scaleX: 1 + swell.value * 0.035 },
-    ],
-  }));
 
   const fillProps = useAnimatedProps(() => ({
     fill: interpolateColor(progress.value, [0, 1], [from, to]),
@@ -145,32 +126,87 @@ export default function CloudEdge({ width, progress, from, to }: Props) {
     ),
   }));
 
+  // A slow drift of the whole bank, on top of the per-lobe motion. This one is
+  // a plain view transform, so it holds even if animating an SVG group's
+  // translate behaves differently on a given platform.
+  const drift = useSharedValue(0);
+  React.useEffect(() => {
+    drift.value = withRepeat(
+      withTiming(1, { duration: 11000, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true,
+    );
+  }, [drift]);
+  const driftStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: (drift.value - 0.5) * 10 }],
+  }));
+
   return (
     <View style={[styles.clip, { height }]} pointerEvents="none">
-      <Animated.View style={[styles.canvas, { left: -BLEED }, motion]}>
+      <Animated.View style={[styles.canvas, { left: -BLEED }, driftStyle]}>
         <Svg width={canvas} height={height}>
-          {layers.map((layer, i) =>
-            layer.kind === 'fill' ? (
-              <AnimatedPath key={i} d={layer.d} animatedProps={fillProps} />
-            ) : (
-              <AnimatedPath
-                key={i}
-                d={layer.d}
-                fill="none"
-                strokeWidth={4}
-                strokeLinecap="round"
-                animatedProps={arcProps}
-              />
-            ),
-          )}
+          <AnimatedPath d={skirt} animatedProps={fillProps} />
+          {lobes.map((lobe, i) => (
+            <Lobe
+              key={i}
+              lobe={lobe}
+              fillProps={fillProps}
+              arcProps={arcProps}
+            />
+          ))}
         </Svg>
       </Animated.View>
     </View>
   );
 }
 
+type LobeShape = ReturnType<typeof buildPaths>['lobes'][number];
+
+/**
+ * One puff: its fill, then its own arc directly on top. Keeping the pair inside
+ * a single group means the next lobe's fill still paints over this arc, which
+ * is what leaves only the short curve in the valley.
+ */
+function Lobe({
+  lobe,
+  fillProps,
+  arcProps,
+}: {
+  lobe: LobeShape;
+  fillProps: ReturnType<typeof useAnimatedProps>;
+  arcProps: ReturnType<typeof useAnimatedProps>;
+}) {
+  const t = useSharedValue(0);
+
+  React.useEffect(() => {
+    t.value = withRepeat(
+      withTiming(1, { duration: lobe.period, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true,
+    );
+  }, [t, lobe.period]);
+
+  const motion = useAnimatedProps(() => ({
+    translateX: (t.value - 0.5) * 2 * lobe.sway,
+    translateY: (0.5 - t.value) * 2 * lobe.rise,
+  }));
+
+  return (
+    <AnimatedG animatedProps={motion}>
+      <AnimatedPath d={lobe.fill} animatedProps={fillProps} />
+      <AnimatedPath
+        d={lobe.arc}
+        fill="none"
+        strokeWidth={4}
+        strokeLinecap="round"
+        animatedProps={arcProps}
+      />
+    </AnimatedG>
+  );
+}
+
 const styles = StyleSheet.create({
-  // Overlaps the body slightly, so the vertical bob can never open a seam.
-  clip: { marginBottom: -4 },
+  // Overlaps the body slightly, so lobe motion can never open a seam.
+  clip: { marginBottom: -6 },
   canvas: { position: 'absolute', bottom: 0 },
 });

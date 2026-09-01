@@ -47,7 +47,9 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
 
   useEffect(() => {
     enter.value = 0;
-    enter.value = withDelay(180 + index * 70, withSpring(1, springs.pop));
+    // The road now runs every category end to end, so the stagger is capped:
+    // an uncapped one would still be dealing in nodes a screen and a half down.
+    enter.value = withDelay(180 + Math.min(index, 7) * 70, withSpring(1, springs.pop));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawKey]);
 

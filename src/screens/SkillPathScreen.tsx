@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
+  runOnJS,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useSharedValue,
@@ -9,10 +10,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Backdrop from '../components/Backdrop';
 import Celebration from '../components/Celebration';
 import Header from '../components/Header';
-import LessonPlayer from './LessonPlayer';
 import LessonSheet from '../components/LessonSheet';
 import SkillNode from '../components/SkillNode';
 import SkillRoad from '../components/SkillRoad';
+import LessonPlayer from './LessonPlayer';
 import { PATHS } from '../data/paths';
 import type { Lesson } from '../data/paths';
 import { buildRoad } from '../lib/road';
@@ -24,6 +25,17 @@ type Props = {
   onComplete: (pathId: string, lesson: Lesson) => void;
   /** Lets the shell move the floating tab bar out from under the sheet. */
   onSheetOpenChange: (open: boolean) => void;
+};
+
+/** Breathing room where one category's road hands over to the next. */
+const SECTION_GAP = 70;
+
+type Row = {
+  pathId: string;
+  lesson: Lesson;
+  status: LessonStatus;
+  x: number;
+  y: number;
 };
 
 export default function SkillPathScreen({
@@ -38,46 +50,69 @@ export default function SkillPathScreen({
   const [selected, setSelected] = useState<{ lesson: Lesson; status: LessonStatus } | null>(null);
   const [burst, setBurst] = useState(0);
   const [burstAt, setBurstAt] = useState<{ x: number; y: number } | null>(null);
-  /** The lesson currently running its interlude, if any. */
   const [playing, setPlaying] = useState<Lesson | null>(null);
 
   const scrollY = useSharedValue(0);
+  const section = useSharedValue(0);
   const scroller = useAnimatedRef<Animated.ScrollView>();
-
-  const path = useMemo(() => PATHS.find((p) => p.id === activeId) ?? PATHS[0], [activeId]);
-  const completed = completedByPath[path.id] ?? [];
 
   // The frame is 390 wide; scale x so the layout keeps its proportions on wider
   // handsets rather than hugging the left edge.
   const scale = width / DESIGN_WIDTH;
-  const firstNodeY = headerMetrics(insets.top).firstNodeY;
+  const { firstNodeY, scrimHeight } = headerMetrics(insets.top);
 
-  const nodes = useMemo(
-    () =>
-      path.lessons.map((lesson, i) => ({
-        lesson,
-        x: layout.nodeColumns[i % layout.nodeColumns.length] * scale,
-        y: firstNodeY + i * layout.nodeSpacing,
-      })),
-    [path, scale, firstNodeY],
-  );
+  /**
+   * Every category laid end to end on one road, rather than a path per chip.
+   * Scrolling off the bottom of one carries straight into the next, and the
+   * chip row follows where you are instead of choosing what you see.
+   */
+  const { rows, starts, ids, contentHeight } = useMemo(() => {
+    const out: Row[] = [];
+    const starts: number[] = [];
+    const ids: string[] = [];
+    let y = firstNodeY;
+    let n = 0;
 
-  /** Last node's bottom edge, plus just enough to clear the floating tab bar. */
-  const contentHeight =
-    firstNodeY +
-    Math.max(0, path.lessons.length - 1) * layout.nodeSpacing +
-    layout.nodeSize +
-    layout.tabBarHeight +
-    layout.tabBarBottomGap +
-    insets.bottom +
-    24;
+    for (const path of PATHS) {
+      const statuses = statusesFor(
+        path.lessons.map((l) => l.id),
+        completedByPath[path.id] ?? [],
+      );
+      starts.push(y);
+      ids.push(path.id);
+      path.lessons.forEach((lesson, i) => {
+        out.push({
+          pathId: path.id,
+          lesson,
+          status: statuses[i],
+          x: layout.nodeColumns[n % layout.nodeColumns.length] * scale,
+          y,
+        });
+        y += layout.nodeSpacing;
+        n += 1;
+      });
+      y += SECTION_GAP;
+    }
+
+    const height =
+      y -
+      SECTION_GAP -
+      layout.nodeSpacing +
+      layout.nodeSize +
+      layout.tabBarHeight +
+      layout.tabBarBottomGap +
+      insets.bottom +
+      24;
+
+    return { rows: out, starts, ids, contentHeight: height };
+  }, [completedByPath, firstNodeY, scale, insets.bottom]);
 
   /**
    * The road switches column midway between each pair of nodes, which is what
    * puts every node in the column the road has just left.
    */
   const road = useMemo(() => {
-    const centres = nodes.map((n) => n.y + layout.nodeFace / 2);
+    const centres = rows.map((r) => r.y + layout.nodeFace / 2);
     const crossings = centres.slice(0, -1).map((c, i) => (c + centres[i + 1]) / 2);
     return buildRoad({
       leftX: roadTokens.leftX * scale,
@@ -89,15 +124,22 @@ export default function SkillPathScreen({
       // Node 1 sits in the left column, so the road enters on the right.
       startRight: true,
     });
-  }, [nodes, scale, contentHeight]);
+  }, [rows, scale, contentHeight]);
 
-  const statuses = useMemo(
-    () => statusesFor(path.lessons.map((l) => l.id), completed),
-    [path, completed],
-  );
+  /** Where the chip row should read from: just under the header. */
+  const probe = scrimHeight + 40;
 
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
+    const at = e.contentOffset.y + probe;
+    let i = 0;
+    for (let k = 0; k < starts.length; k++) {
+      if (at >= starts[k]) i = k;
+    }
+    if (i !== section.value) {
+      section.value = i;
+      runOnJS(setActiveId)(ids[i]);
+    }
   });
 
   const handleNodePress = useCallback((lesson: Lesson, status: LessonStatus) => {
@@ -118,26 +160,27 @@ export default function SkillPathScreen({
     setPlaying(null);
     if (!lesson) return;
 
-    const i = path.lessons.findIndex((l) => l.id === lesson.id);
-    const node = nodes[i];
-    if (node) {
+    const row = rows.find((r) => r.lesson.id === lesson.id);
+    if (row) {
       setBurstAt({
-        x: node.x + layout.nodeFace / 2,
-        y: node.y + layout.nodeFace / 2 - scrollY.value,
+        x: row.x + layout.nodeFace / 2,
+        y: row.y + layout.nodeFace / 2 - scrollY.value,
       });
       setBurst((n) => n + 1);
+      onComplete(row.pathId, lesson);
     }
-    onComplete(path.id, lesson);
     setSelected({ lesson, status: 'done' });
-  }, [playing, nodes, onComplete, path, scrollY]);
+  }, [playing, rows, onComplete, scrollY]);
 
+  /** Chips jump to a category rather than swapping the road out. */
   const handleCategory = useCallback(
     (id: string) => {
-      setActiveId(id);
+      const i = ids.indexOf(id);
+      if (i < 0) return;
       setSelected(null);
-      scroller.current?.scrollTo({ y: 0, animated: true });
+      scroller.current?.scrollTo({ y: Math.max(0, starts[i] - probe + 60), animated: true });
     },
-    [scroller],
+    [ids, starts, probe, scroller],
   );
 
   React.useEffect(() => {
@@ -155,18 +198,18 @@ export default function SkillPathScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ height: contentHeight }}
       >
-        <SkillRoad width={width} height={contentHeight} road={road} drawKey={path.id} />
+        <SkillRoad width={width} height={contentHeight} road={road} drawKey="all" />
 
-        {nodes.map((node, i) => (
+        {rows.map((row, i) => (
           <SkillNode
-            key={node.lesson.id}
-            lesson={node.lesson}
-            status={statuses[i]}
+            key={row.lesson.id}
+            lesson={row.lesson}
+            status={row.status}
             index={i}
-            x={node.x}
-            y={node.y}
+            x={row.x}
+            y={row.y}
             onPress={handleNodePress}
-            drawKey={path.id}
+            drawKey="all"
           />
         ))}
       </Animated.ScrollView>

@@ -129,10 +129,12 @@ src/
 
 ## Lessons
 
-Each of the four chips has its own road. The first five Fitness lessons are
-transcribed from the frame verbatim; everything after them in `src/data/paths.ts`
-is placeholder text, there so each category has a road long enough to travel.
-Replace those entries when real curriculum exists — nothing else reads them.
+All four categories lie end to end on one road: scrolling off the bottom of one
+carries straight into the next, and the chip row follows where you are rather
+than choosing what you see. Tapping a chip scrolls to that stretch.The first five Fitness lessons are transcribed from the frame verbatim;
+everything after them in `src/data/paths.ts` is placeholder text, there so each
+category has a road long enough to travel. Replace those entries when real
+curriculum exists — nothing else reads them.
 
 ## The lesson flow
 
@@ -155,10 +157,14 @@ where the two meet. Drawing all the arcs after all the fills instead leaves
 whole rings floating on the surface. Insetting means an arc can never stray
 outside the silhouette, so nothing needs clipping.
 
-The edge drifts, bobs and stretches on three loops of different length.
-Stretching horizontally moves lobes relative to each other, so it billows rather
-than sliding rigidly. It is drawn on a canvas wider than the panel and overlaps
-the body by 4px, so no amount of motion can expose a corner or open a seam.
+Every lobe then rises, falls and slides on its own loop at its own period.
+Moving the bank as one rigid piece is barely legible as motion; moving the lobes
+against each other is what reads as billowing, because the valleys deepen and
+fill as they go. A slow drift of the whole bank sits on top of that as a plain
+view transform, so some motion holds even if animating an SVG group's translate
+behaves differently on a given platform. The edge is drawn on a canvas wider
+than the panel and overlaps the body, so no amount of motion exposes a corner or
+opens a seam.
 
 A previous, simpler version of this edge — static, no depth — is kept on the
 `cloud-v1-static` branch.

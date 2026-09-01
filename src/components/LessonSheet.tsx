@@ -114,10 +114,6 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
       [colors.nodePlate, colors.successEdge],
     ),
   }));
-  const briefStyle = useAnimatedStyle(() => ({
-    opacity: 1 - badge.value,
-    transform: [{ scale: 1 - badge.value * 0.2 }],
-  }));
 
   const pan = React.useMemo(
     () =>
@@ -180,12 +176,17 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
             <View style={styles.slot}>
               <Animated.View style={[styles.plate, plateStyle]} />
               <Animated.View style={[styles.face, faceStyle]}>
-                <Animated.View style={[StyleSheet.absoluteFill, styles.center, briefStyle]}>
-                  <PlayIcon size={22} color={colors.nodeGlyph} />
-                </Animated.View>
-                <Animated.View style={[StyleSheet.absoluteFill, styles.center, badgeStyle]}>
-                  <CheckIcon size={30} color={colors.xpGreen} weight={3.6} />
-                </Animated.View>
+                {/* Only ever one glyph. Cross-fading them left the play icon
+                    showing through the check for the length of its pop. */}
+                {showDone ? (
+                  <Animated.View style={[StyleSheet.absoluteFill, styles.center, badgeStyle]}>
+                    <CheckIcon size={30} color={colors.xpGreen} weight={3.6} />
+                  </Animated.View>
+                ) : (
+                  <View style={[StyleSheet.absoluteFill, styles.center]}>
+                    <PlayIcon size={22} color={colors.nodeGlyph} />
+                  </View>
+                )}
               </Animated.View>
             </View>
 

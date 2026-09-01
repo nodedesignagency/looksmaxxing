@@ -190,12 +190,16 @@ export function headerMetrics(topInset: number) {
   const titleTop = topInset + 11;
   const titleRow = 33;
   const contentEnd = titleTop + titleRow + layout.chipHeight;
+  // The frame butts the first node straight against the chips, which leaves it
+  // sitting in the strongest part of the scrim and half-read. The scrim now
+  // finishes sooner and the first node starts where it finishes, so it opens
+  // fully visible.
+  const scrimHeight = topInset + 128;
   return {
     titleTop,
     titleRow,
     contentEnd,
-    /** Full 219px header block, re-based on the inset. */
-    scrimHeight: topInset + 160,
-    firstNodeY: contentEnd + 1,
+    scrimHeight,
+    firstNodeY: scrimHeight,
   };
 }
