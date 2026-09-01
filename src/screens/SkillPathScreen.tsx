@@ -73,6 +73,17 @@ export default function SkillPathScreen({
    */
   const [band, setBand] = useState(0);
 
+  /**
+   * True once the opening entrance has played. Nodes that scroll into the mount
+   * window after that appear without animating, so travelling down the road
+   * does not keep setting off springs.
+   */
+  const [introDone, setIntroDone] = useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setIntroDone(true), 1200);
+    return () => clearTimeout(t);
+  }, []);
+
   // The frame is 390 wide; scale x so the layout keeps its proportions on wider
   // handsets rather than hugging the left edge.
   const scale = width / DESIGN_WIDTH;
@@ -241,6 +252,7 @@ export default function SkillPathScreen({
             y={row.y}
             onPress={handleNodePress}
             drawKey="all"
+            animate={!introDone}
           />
         ))}
       </Animated.ScrollView>

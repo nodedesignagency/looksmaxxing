@@ -31,12 +31,28 @@ type Props = {
   onPress: (lesson: Lesson, status: LessonStatus) => void;
   /** Changes when the category switches, to replay the entrance. */
   drawKey: string;
+  /**
+   * Whether this node should play its entrance. Nodes are mounted and unmounted
+   * as the road scrolls, and replaying a spring every time one comes back into
+   * the window fires a wave of them mid-scroll — which is most of what made the
+   * appearance feel heavy. Only the first screenful animates.
+   */
+  animate?: boolean;
 };
 
 const FACE = layout.nodeFace;
 const PLATE = layout.nodePlateOffset;
 
-export default function SkillNode({ lesson, status, index, x, y, onPress, drawKey }: Props) {
+export default function SkillNode({
+  lesson,
+  status,
+  index,
+  x,
+  y,
+  onPress,
+  drawKey,
+  animate = true,
+}: Props) {
   const locked = status === 'locked';
 
   const enter = useSharedValue(0);
@@ -46,10 +62,17 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
   const pop = useSharedValue(0);
 
   useEffect(() => {
+    if (!animate) {
+      enter.value = 1;
+      return;
+    }
     enter.value = 0;
-    // The road now runs every category end to end, so the stagger is capped:
-    // an uncapped one would still be dealing in nodes a screen and a half down.
-    enter.value = withDelay(180 + Math.min(index, 7) * 70, withSpring(1, springs.pop));
+    // Short, and barely bouncy. The old preset took past a second to settle,
+    // and the stagger ran to two thirds of that before the last node started.
+    enter.value = withDelay(
+      90 + Math.min(index, 5) * 45,
+      withSpring(1, { damping: 17, stiffness: 300, mass: 0.7 }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawKey]);
 
@@ -114,8 +137,8 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
     opacity: enter.value,
     transform: [
       { translateX: shake.value * 7 },
-      { translateY: (1 - enter.value) * 20 },
-      { scale: 0.76 + enter.value * 0.24 + pop.value * 0.14 },
+      { translateY: (1 - enter.value) * 14 },
+      { scale: 0.86 + enter.value * 0.14 + pop.value * 0.14 },
     ],
   }));
 

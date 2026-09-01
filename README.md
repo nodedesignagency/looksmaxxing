@@ -91,7 +91,15 @@ made of.
 ## Assets
 
 The design's own exports now live under `assets/` — cloud plates, the four chip
-sprites, and the icons. `metro.config.js` runs `react-native-svg-transformer`,
+sprites, and the icons.
+
+The frame composites its clouds in **Overlay**, which matters: they are
+grey-white photographs on transparency, and painted normally they sit on the sky
+as grey smudges. `mixBlendMode` exists in React Native but react-native-web
+drops it, so it cannot be checked on both targets from one place — the plates
+are tinted to a pale sky-white instead. The alpha channel is what carries a
+cloud's shape and softness, so tinting lands close to what Overlay produces and
+behaves the same everywhere. `metro.config.js` runs `react-native-svg-transformer`,
 so a `.svg` imports as a component; their colours were rewritten to
 `currentColor` and each takes a `color` prop.
 
@@ -124,7 +132,10 @@ src/
 
 - The road draws itself on from the top with an animated dash offset, then its
   centre line fades up and marches slowly along the surface.
-- Nodes spring in on a 70ms stagger.
+- Nodes spring in on a 45ms stagger, and only on the opening screenful. Nodes
+  mount and unmount as the road scrolls, so replaying the entrance every time
+  one re-entered the window set off a wave of springs mid-scroll — most of what
+  made the appearance feel heavy.
 - Cloud plates parallax against scroll at three rates and drift on long loops.
 - Nodes squash into their shadow on press; locked ones shake and buzz.
 - The lesson you're on breathes a halo ring.

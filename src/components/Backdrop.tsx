@@ -13,10 +13,19 @@ import { colors } from '../theme/tokens';
 /**
  * The sky behind the road.
  *
- * The clouds are the design's own photographic plates. They parallax against
- * the scroll at three rates and drift on long loops, which is what keeps a flat
- * sky from reading as wallpaper. Three images cost far less than the ring of
- * gradient ellipses that stood in for them.
+ * The clouds are the design's own photographic plates. The frame composites
+ * them in Overlay, which matters: these are grey-white photographs on
+ * transparency, and painted normally they sit on the sky as grey smudges.
+ *
+ * `mixBlendMode` exists in React Native but react-native-web drops it, so it
+ * cannot be checked on both targets from one place. These are tinted instead —
+ * the alpha channel is what carries a cloud's shape and softness, so tinting to
+ * a pale sky-white lands close to what Overlay produces and behaves the same
+ * everywhere.
+ *
+ * The first plate is placed at the frame's own coordinates for
+ * `image-from-rawpixel-id-6117623-png 3` — (229, 102) at 298 x 199, pinned to
+ * the right edge, so it keeps that offset on a wider handset.
  */
 
 type Props = {
@@ -24,8 +33,11 @@ type Props = {
   contentHeight: number;
 };
 
+/** Where Overlay lands a grey-white plate against this sky. */
+const CLOUD_TINT = '#F2F9FE';
+
+const MAIN = require('../../assets/clouds/cloud-main.png');
 const PLATES = [
-  require('../../assets/clouds/cloud-1.png'),
   require('../../assets/clouds/cloud-2.png'),
   require('../../assets/clouds/cloud-3.png'),
 ];
@@ -58,34 +70,45 @@ export default function Backdrop({ scrollY, contentHeight }: Props) {
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.sky]} pointerEvents="none">
-      {/* The plates the frame places by hand, near the top of the path. */}
-      <Animated.View style={[styles.layer, { top: 120, left: 210 }, far]}>
+      {/* image-from-rawpixel-id-6117623-png 3 — (229, 102), 298 x 198.54, right-pinned. */}
+      <Animated.View style={[styles.layer, { top: 102, right: -137 }, far]}>
         <Animated.View style={driftC}>
-          <Image source={PLATES[0]} style={styles.wide} resizeMode="contain" />
+          <Image source={MAIN} style={styles.main} tintColor={CLOUD_TINT} resizeMode="contain" />
         </Animated.View>
       </Animated.View>
-      <Animated.View style={[styles.layer, { top: 330, left: -150 }, mid]}>
+
+      <Animated.View style={[styles.layer, { top: 340, left: -150 }, mid]}>
         <Animated.View style={driftA}>
-          <Image source={PLATES[1]} style={styles.tall} resizeMode="contain" />
+          <Image source={PLATES[0]} style={styles.tall} resizeMode="contain" />
         </Animated.View>
       </Animated.View>
-      <Animated.View style={[styles.layer, { top: 520, left: 235 }, near]}>
+      <Animated.View style={[styles.layer, { top: 560, left: 230 }, near]}>
         <Animated.View style={driftB}>
-          <Image source={PLATES[2]} style={styles.wide} resizeMode="contain" />
+          <Image source={PLATES[1]} style={styles.wide} resizeMode="contain" />
         </Animated.View>
       </Animated.View>
 
       {/* Repeats, so a long road never runs out of sky. */}
       {Array.from({ length: bands }, (_, i) => (
         <React.Fragment key={i}>
-          <Animated.View style={[styles.layer, { top: 1000 + i * 1600, left: -130 }, mid]}>
+          <Animated.View style={[styles.layer, { top: 1020 + i * 1600, left: -130 }, mid]}>
             <Animated.View style={driftA}>
-              <Image source={PLATES[(i + 1) % 3]} style={styles.tall} resizeMode="contain" />
+              <Image
+                source={i % 2 ? MAIN : PLATES[1]}
+                style={styles.tall}
+                tintColor={CLOUD_TINT}
+                resizeMode="contain"
+              />
             </Animated.View>
           </Animated.View>
-          <Animated.View style={[styles.layer, { top: 1720 + i * 1600, left: 205 }, near]}>
+          <Animated.View style={[styles.layer, { top: 1740 + i * 1600, left: 200 }, near]}>
             <Animated.View style={driftB}>
-              <Image source={PLATES[(i + 2) % 3]} style={styles.wide} resizeMode="contain" />
+              <Image
+                source={i % 2 ? PLATES[0] : MAIN}
+                style={styles.wide}
+                tintColor={CLOUD_TINT}
+                resizeMode="contain"
+              />
             </Animated.View>
           </Animated.View>
         </React.Fragment>
@@ -97,6 +120,7 @@ export default function Backdrop({ scrollY, contentHeight }: Props) {
 const styles = StyleSheet.create({
   sky: { backgroundColor: colors.sky },
   layer: { position: 'absolute' },
-  wide: { width: 250, height: 167, opacity: 0.9 },
-  tall: { width: 280, height: 155, opacity: 0.85 },
+  main: { width: 298, height: 198.54, opacity: 0.92 },
+  wide: { width: 250, height: 167, opacity: 0.85 },
+  tall: { width: 280, height: 155, opacity: 0.8 },
 });
