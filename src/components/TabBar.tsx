@@ -192,21 +192,25 @@ const styles = StyleSheet.create({
     height: layout.tabBarHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: radii.chip + 4,
+    // "tabPills": radius 9999, 1px inside ECF0F9 stroke, and a drop shadow of
+    // x0 y2 blur20 black at 10%. Figma blur is a diameter, iOS shadowRadius a
+    // radius, so the blur halves.
+    borderRadius: radii.tabBar,
     backgroundColor: colors.tabBar,
-    // A soft lift so the bar floats over the trail rather than sitting on it.
-    shadowColor: '#12466B',
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 10,
+    borderWidth: 1,
+    borderColor: colors.chipEdge,
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 8,
   },
   pill: {
     position: 'absolute',
     left: 0,
     top: layout.tabInner,
     height: layout.tabBarHeight - layout.tabInner * 2,
-    borderRadius: radii.chip,
+    borderRadius: radii.tabPill,
     backgroundColor: colors.tabPill,
   },
   tab: {

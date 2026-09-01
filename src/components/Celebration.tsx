@@ -37,7 +37,7 @@ type Spec = {
 
 export default function Celebration({ token, origin }: Props) {
   const palette = useMemo(
-    () => [colors.xpGreen, colors.nodeGlyph, colors.cloud, colors.roadDash, colors.chipIdle],
+    () => [colors.xpGreen, colors.nodeGlyph, colors.cloud, colors.roadDash, colors.successEdge],
     [],
   );
 

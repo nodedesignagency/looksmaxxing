@@ -20,8 +20,10 @@ export const colors = {
   roadShadow: 'rgba(88, 138, 171, 0.16)',
 
   // Ink --------------------------------------------------------------------
-  /** Chip and node labels: the frame sets these to pure black. */
+  /** Chip and tab labels. */
   ink: '#000000',
+  /** Node titles. */
+  nodeTitle: '#10334A',
   /** Labels under the header scrim and on locked nodes. */
   inkMuted: '#5F86A2',
   title: '#FFFFFF',
@@ -40,8 +42,11 @@ export const colors = {
   // "+25 XP" pill ----------------------------------------------------------
   xpChip: '#FFFFFF',
   xpChipMuted: 'rgba(255, 255, 255, 0.55)',
-  /** Bolt and label are both green. */
-  xpGreen: '#22C55E',
+  /** Bolt and label are both this green. */
+  xpGreen: '#10AB6E',
+  /** Success panel, built from the XP green. */
+  successTint: '#E4F7EF',
+  successEdge: '#0B8256',
 
   // Category chips ---------------------------------------------------------
   chipIdle: '#C3DDEF',
@@ -52,8 +57,8 @@ export const colors = {
 
   // Tab bar ----------------------------------------------------------------
   tabBar: '#FFFFFF',
-  tabPill: '#DCEBF7',
-  tabIdle: '#1D3F55',
+  tabPill: '#E4EEF7',
+  tabIdle: '#000000',
   tabActive: '#588AAB',
 
   surface: '#FFFFFF',
@@ -123,6 +128,9 @@ export const radii = {
   /** The frame sets 30 on a 48px face and 38 on a 40px chip; both fully round. */
   node: layout.nodeFace / 2,
   chip: layout.chipHeight / 2,
+  /** "tabPills" is radius 9999 — a full stadium. */
+  tabBar: layout.tabBarHeight / 2,
+  tabPill: (layout.tabBarHeight - 8) / 2,
   pill: 999,
   sheet: 28,
   card: 18,
@@ -143,16 +151,16 @@ export const fonts = {
 export const type = {
   /** "Skill Path" — a 105x17 text box at (20, 70). */
   screenTitle: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 32 },
-  /** Node titles, e.g. "Beginner Body weight" at 156x11. */
-  nodeTitle: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 20 },
-  /** "+25 XP" at 32x7. */
-  xp: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14 },
+  /** Node titles — Geist Regular 16, tracking -2%. */
+  nodeTitle: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.32 },
+  /** "+25 XP" — Geist Regular 10, tracking -2.8%. */
+  xp: { fontFamily: fonts.regular, fontSize: 10, lineHeight: 13, letterSpacing: -0.28 },
   /** Chip labels, e.g. "Oral Posture" at 90x11. */
-  chip: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 20 },
+  chip: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.32 },
   /** Tab labels in 78x13 boxes. */
-  tab: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 15 },
-  sheetTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28 },
-  button: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 22 },
+  tab: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 16, letterSpacing: -0.26 },
+  sheetTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5 },
+  button: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, letterSpacing: 0.8 },
 } as const;
 
 /** Spring presets, so every gesture in the app feels related. */

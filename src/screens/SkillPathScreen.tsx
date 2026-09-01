@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   useAnimatedRef,
@@ -40,7 +40,6 @@ export default function SkillPathScreen({
 
   const scrollY = useSharedValue(0);
   const scroller = useAnimatedRef<Animated.ScrollView>();
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const path = useMemo(() => PATHS.find((p) => p.id === activeId) ?? PATHS[0], [activeId]);
   const completed = completedByPath[path.id] ?? [];
@@ -116,9 +115,7 @@ export default function SkillPathScreen({
         setBurst((n) => n + 1);
       }
       onComplete(path.id, lesson);
-      if (closeTimer.current) clearTimeout(closeTimer.current);
-      // Let the success land before the sheet gets out of the way.
-      closeTimer.current = setTimeout(() => setSelected(null), 520);
+      // The sheet stays open on its result card; CONTINUE dismisses it.
     },
     [nodes, onComplete, path, scrollY],
   );
@@ -135,13 +132,6 @@ export default function SkillPathScreen({
   React.useEffect(() => {
     onSheetOpenChange(selected !== null);
   }, [selected, onSheetOpenChange]);
-
-  React.useEffect(
-    () => () => {
-      if (closeTimer.current) clearTimeout(closeTimer.current);
-    },
-    [],
-  );
 
   return (
     <View style={styles.root}>

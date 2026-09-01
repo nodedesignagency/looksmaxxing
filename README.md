@@ -57,8 +57,9 @@ inspector panel and transcribed by hand, and they are exact:
 | Node face (child `1`) | 48x48 at (0,0), radius 30, fill `FFFFFF` |
 | Node plate (child `2`) | 48x48 at (2,2), radius 30, fill `588AAB` |
 | Node glyph | `588AAB` |
-| "+25 XP" | white pill, bolt and label both green |
-| Type | Geist |
+| Node title | Geist Regular 16, tracking -2%, `10334A` |
+| "+25 XP" | Geist Regular 10, tracking -2.8%, `10AB6E` |
+| Tab bar | radius 9999, fill `FFFFFF`, 1px inside `ECF0F9`, shadow x0 y2 blur20 black 10% |
 
 The node's depth is that second plate, not a blur: two identical circles two
 pixels apart, the lower one showing through as a crescent. Pressing a node
@@ -110,6 +111,17 @@ Each of the four chips has its own road. The first five Fitness lessons are
 transcribed from the frame verbatim; everything after them in `src/data/paths.ts`
 is placeholder text, there so each category has a road long enough to travel.
 Replace those entries when real curriculum exists — nothing else reads them.
+
+## The lesson panel
+
+Tapping a node opens a brief — the node's own circle, its title, its XP — and
+"start" fills the button across while the lesson runs. When it lands the panel
+turns green and becomes a result card with a check, "Awesome!" and the XP
+earned; that is the beat the confetti fires on and the node behind flips to a
+check. It stays until CONTINUE dismisses it.
+
+Buttons use the node's construction at a larger scale: a face over a darker
+plate, pressed down onto it. The nodes offset by 2px, a button by 4.
 
 ## Node states
 

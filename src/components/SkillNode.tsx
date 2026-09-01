@@ -164,7 +164,7 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
 
           <Animated.View style={[styles.label, labelStyle]}>
             <Text
-              style={[type.nodeTitle, { color: locked ? colors.inkMuted : colors.ink }]}
+              style={[type.nodeTitle, { color: locked ? colors.inkMuted : colors.nodeTitle }]}
               numberOfLines={1}
             >
               {lesson.title}
