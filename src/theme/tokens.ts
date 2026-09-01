@@ -47,6 +47,9 @@ export const colors = {
   /** Success panel, built from the XP green. */
   successTint: '#E4F7EF',
   successEdge: '#0B8256',
+  /** Interior arcs that give the panel's cloud edge its depth. */
+  cloudDepth: '#E3EDF5',
+  cloudDepthSuccess: '#A9E0C6',
 
   // Category chips ---------------------------------------------------------
   chipIdle: '#C3DDEF',

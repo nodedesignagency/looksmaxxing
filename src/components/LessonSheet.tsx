@@ -52,17 +52,22 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
   const badge = useSharedValue(0);
 
   const [shown, setShown] = useState<Lesson | null>(lesson);
+  // Held alongside `shown`: the status prop clears the moment the sheet is
+  // dismissed, and deriving from it made the result card revert to the brief
+  // while it was still on screen animating away.
+  const [shownDone, setShownDone] = useState(false);
   const done = status === 'done';
 
   useEffect(() => {
     if (lesson) {
       setShown(lesson);
+      setShownDone(done);
       drag.value = 0;
       // The panel opens already green on a result, but the check still springs
       // in, so the card lands rather than simply appearing.
       win.value = done ? 1 : 0;
       badge.value = 0;
-      open.value = withSpring(1, { damping: 20, stiffness: 200, mass: 0.9 });
+      open.value = withSpring(1, { damping: 26, stiffness: 260, mass: 0.85 });
       if (done) {
         badge.value = withDelay(
           140,
@@ -83,9 +88,10 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
     opacity: open.value * (1 - Math.min(1, drag.value / 260)),
   }));
 
+  // Slide only. Fading it in as well left the panel translucent for the length
+  // of the entrance, with the screen readable straight through it.
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: (1 - open.value) * height * 0.6 + drag.value }],
-    opacity: open.value,
   }));
 
   const bodyStyle = useAnimatedStyle(() => ({
@@ -144,6 +150,8 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
   if (!shown) return null;
 
   const interactive = lesson !== null;
+  // Render the frozen copy, so the exit animation keeps the card it opened as.
+  const showDone = shownDone;
 
   return (
     <View
@@ -185,29 +193,32 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
               <Text
                 style={[
                   type.sheetTitle,
-                  { color: done ? colors.xpGreen : colors.nodeTitle },
+                  { color: showDone ? colors.xpGreen : colors.nodeTitle },
                 ]}
                 numberOfLines={2}
               >
-                {done ? 'Awesome!' : shown.title}
+                {showDone ? 'Awesome!' : shown.title}
               </Text>
               <View style={styles.meta}>
                 <BoltIcon size={13} color={colors.xpGreen} />
                 <Text style={[styles.metaText]}>
-                  {done ? `+${shown.xp} XP earned` : `+${shown.xp} XP`}
+                  {showDone ? `+${shown.xp} XP earned` : `+${shown.xp} XP`}
                 </Text>
               </View>
             </View>
           </View>
 
           <ChunkyButton
-            label={done ? 'Continue' : 'Start lesson'}
-            face={done ? colors.xpGreen : colors.nodeGlyph}
-            edge={done ? colors.successEdge : '#3D6C8A'}
+            label={showDone ? 'Continue' : 'Start lesson'}
+            face={showDone ? colors.xpGreen : colors.nodeGlyph}
+            edge={showDone ? colors.successEdge : '#3D6C8A'}
             textColor={colors.surface}
-            onPress={done ? onClose : start}
+            onPress={showDone ? onClose : start}
           />
           </Animated.View>
+          {/* Extends past the screen edge: whatever the spring overshoots into
+              is still panel, never the screen behind. */}
+          <Animated.View style={[styles.cushion, bodyStyle]} pointerEvents="none" />
         </Animated.View>
       </GestureDetector>
     </View>
@@ -217,6 +228,7 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
 const styles = StyleSheet.create({
   scrim: { backgroundColor: colors.scrim },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  cushion: { position: 'absolute', top: '100%', left: 0, right: 0, height: 160 },
   body: { paddingHorizontal: 22, paddingTop: 6 },
   head: { flexDirection: 'row', alignItems: 'center', marginBottom: 22 },
   slot: { width: 62, height: 62 },

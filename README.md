@@ -144,10 +144,24 @@ behind flips to a check. CONTINUE dismisses it.
 The panel's top edge billows rather than being a rounded rectangle. It is not a
 row of tangent semicircles — those meet in a sharp cusp at every valley, which
 reads as scalloped rather than soft. `CloudEdge` uses whole circles of unequal
-size, centred on the panel's top line and heavily overlapping, each emitted as a
-subpath of one path wound the same way so the nonzero fill rule unions them. The
-valleys are then just the shallow arcs where two circles cross, and the uneven
-radii are what keep it from looking manufactured.
+size, centred on the panel's top line and heavily overlapping. The valleys are
+the shallow arcs where two circles cross, and the uneven radii are what keep it
+from looking manufactured.
+
+Depth comes from drawing each circle a second time as an inset stroke, with
+fills and strokes **interleaved lobe by lobe**: every lobe's fill paints over
+the arc of the one before it, so what survives is a short curve in the valley
+where the two meet. Drawing all the arcs after all the fills instead leaves
+whole rings floating on the surface. Insetting means an arc can never stray
+outside the silhouette, so nothing needs clipping.
+
+The edge drifts, bobs and stretches on three loops of different length.
+Stretching horizontally moves lobes relative to each other, so it billows rather
+than sliding rigidly. It is drawn on a canvas wider than the panel and overlaps
+the body by 4px, so no amount of motion can expose a corner or open a seam.
+
+A previous, simpler version of this edge — static, no depth — is kept on the
+`cloud-v1-static` branch.
 
 Buttons use the node's construction at a larger scale: a face over a darker
 plate, pressed down onto it. The nodes offset by 2px, a button by 4.

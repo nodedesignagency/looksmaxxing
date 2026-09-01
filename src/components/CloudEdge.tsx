@@ -1,10 +1,17 @@
 import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
+  Easing,
   SharedValue,
   interpolateColor,
   useAnimatedProps,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
+import { colors } from '../theme/tokens';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -14,18 +21,28 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
  * Not a row of tangent semicircles — those meet in a sharp cusp at every
  * valley, which is what makes an edge read as scalloped rather than soft. These
  * are whole circles of deliberately unequal size, centred on the panel's top
- * line and overlapping their neighbours heavily. Every circle is emitted as a
- * subpath of one path wound the same way, so the nonzero fill rule unions them
- * and the valleys come out as the shallow arcs where two circles cross.
+ * line and overlapping their neighbours heavily. Each is emitted as a subpath
+ * of one path wound the same way, so the nonzero fill rule unions them and the
+ * valleys come out as the shallow arcs where two circles cross.
  *
- * Centres sit on the top line, so each circle's lower half falls inside the
- * panel body and is clipped away by the SVG's own height.
+ * Depth comes from drawing every circle a second time as a stroke, inset from
+ * its own edge, with fills and strokes interleaved lobe by lobe. Each lobe's
+ * fill paints over the arc of the lobe before it, so what survives is a short
+ * curve in the valley where the two meet — the way one puff reads as sitting in
+ * front of another. Drawing every arc after every fill instead leaves whole
+ * rings floating on the surface, which is what this looked like before.
+ * Insetting means an arc can never stray outside the silhouette, so nothing
+ * needs clipping.
+ *
+ * The whole edge then drifts and stretches on long, mismatched loops. Scaling
+ * horizontally moves the lobes relative to each other, so the shape genuinely
+ * billows instead of sliding about rigidly.
  */
 
 /**
- * cx as a fraction of width, r as a fraction of width. One dominant lobe with
- * smaller ones around it — even sizes are what make a cloud look manufactured.
- * The outermost centres sit just past the edges so the corners stay covered.
+ * cx and r as fractions of the panel width. One dominant lobe with smaller ones
+ * around it — even sizes are what make a cloud look manufactured. The outermost
+ * centres sit past the edges so the corners stay covered.
  */
 const LOBES = [
   { cx: -0.02, r: 0.115 },
@@ -38,28 +55,46 @@ const LOBES = [
 
 const MAX_R = Math.max(...LOBES.map((l) => l.r));
 
+/** Bleed each side, so drift and stretch never expose the panel's corners. */
+const BLEED = 16;
+
 /** Tall enough for the biggest lobe to clear the panel's top line. */
 export function cloudEdgeHeight(width: number) {
   return Math.round(MAX_R * width);
 }
 
-function cloudPath(width: number, height: number) {
-  // Two half-arcs per circle, all swept the same way so the union fills solid.
-  const circles = LOBES.map(({ cx, r }) => {
-    const x = cx * width;
+function circle(x: number, y: number, r: number) {
+  // Two half-arcs, always swept the same way so subpaths union rather than cancel.
+  return (
+    `M ${(x - r).toFixed(2)} ${y.toFixed(2)}` +
+    ` a ${r.toFixed(2)} ${r.toFixed(2)} 0 1 1 ${(r * 2).toFixed(2)} 0` +
+    ` a ${r.toFixed(2)} ${r.toFixed(2)} 0 1 1 ${(-r * 2).toFixed(2)} 0 Z`
+  );
+}
+
+type Layer = { kind: 'fill' | 'arc'; d: string };
+
+function buildPaths(width: number, height: number) {
+  const canvas = width + BLEED * 2;
+  const inset = Math.max(4, width * 0.012);
+
+  // A sliver along the bottom first, so no antialiasing seam opens against the
+  // body sitting directly beneath.
+  const layers: Layer[] = [
+    {
+      kind: 'fill',
+      d: `M 0 ${(height - 4).toFixed(2)} H ${canvas.toFixed(2)} V ${height.toFixed(2)} H 0 Z`,
+    },
+  ];
+
+  for (const { cx, r } of LOBES) {
+    const x = BLEED + cx * width;
     const rad = r * width;
-    return (
-      `M ${(x - rad).toFixed(2)} ${height.toFixed(2)}` +
-      ` a ${rad.toFixed(2)} ${rad.toFixed(2)} 0 1 1 ${(rad * 2).toFixed(2)} 0` +
-      ` a ${rad.toFixed(2)} ${rad.toFixed(2)} 0 1 1 ${(-rad * 2).toFixed(2)} 0 Z`
-    );
-  });
-  // A sliver along the bottom, so no antialiasing seam can open up against the
-  // panel body sitting directly beneath.
-  const skirt = `M 0 ${(height - 4).toFixed(2)} H ${width.toFixed(2)} V ${height.toFixed(
-    2,
-  )} H 0 Z`;
-  return [...circles, skirt].join(' ');
+    layers.push({ kind: 'fill', d: circle(x, height, rad) });
+    layers.push({ kind: 'arc', d: circle(x, height, Math.max(2, rad - inset)) });
+  }
+
+  return { canvas, layers };
 }
 
 type Props = {
@@ -72,15 +107,70 @@ type Props = {
 
 export default function CloudEdge({ width, progress, from, to }: Props) {
   const height = cloudEdgeHeight(width);
-  const d = React.useMemo(() => cloudPath(width, height), [width, height]);
+  const { canvas, layers } = React.useMemo(
+    () => buildPaths(width, height),
+    [width, height],
+  );
+
+  // Three loops of different length, so the shape never repeats a pose exactly.
+  const drift = useSharedValue(0);
+  const swell = useSharedValue(0);
+  const bob = useSharedValue(0);
+
+  React.useEffect(() => {
+    const loop = (v: SharedValue<number>, duration: number) =>
+      withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, true);
+    drift.value = loop(drift, 9000);
+    swell.value = loop(swell, 6500);
+    bob.value = loop(bob, 4700);
+  }, [drift, swell, bob]);
+
+  const motion = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: (drift.value - 0.5) * 9 },
+      { translateY: (bob.value - 0.5) * 4 },
+      { scaleX: 1 + swell.value * 0.035 },
+    ],
+  }));
 
   const fillProps = useAnimatedProps(() => ({
     fill: interpolateColor(progress.value, [0, 1], [from, to]),
   }));
 
+  const arcProps = useAnimatedProps(() => ({
+    stroke: interpolateColor(
+      progress.value,
+      [0, 1],
+      [colors.cloudDepth, colors.cloudDepthSuccess],
+    ),
+  }));
+
   return (
-    <Svg width={width} height={height}>
-      <AnimatedPath d={d} animatedProps={fillProps} />
-    </Svg>
+    <View style={[styles.clip, { height }]} pointerEvents="none">
+      <Animated.View style={[styles.canvas, { left: -BLEED }, motion]}>
+        <Svg width={canvas} height={height}>
+          {layers.map((layer, i) =>
+            layer.kind === 'fill' ? (
+              <AnimatedPath key={i} d={layer.d} animatedProps={fillProps} />
+            ) : (
+              <AnimatedPath
+                key={i}
+                d={layer.d}
+                fill="none"
+                strokeWidth={4}
+                strokeLinecap="round"
+                animatedProps={arcProps}
+              />
+            ),
+          )}
+        </Svg>
+      </Animated.View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  // Overlaps the body slightly, so the vertical bob can never open a seam.
+  clip: { marginBottom: -4 },
+  canvas: { position: 'absolute', bottom: 0 },
+});
