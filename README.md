@@ -119,9 +119,13 @@ and when that ends the panel comes back green as a result card — check,
 "Awesome!", XP earned — which is the beat the confetti fires on and the node
 behind flips to a check. CONTINUE dismisses it.
 
-The panel's top edge is a row of semicircles rather than a rounded rectangle,
-so it reads as a bank of cloud. Bump height is always half its width, so the
-uneven widths in `CloudEdge` are the whole shape; there is nothing to line up.
+The panel's top edge billows rather than being a rounded rectangle. It is not a
+row of tangent semicircles — those meet in a sharp cusp at every valley, which
+reads as scalloped rather than soft. `CloudEdge` uses whole circles of unequal
+size, centred on the panel's top line and heavily overlapping, each emitted as a
+subpath of one path wound the same way so the nonzero fill rule unions them. The
+valleys are then just the shallow arcs where two circles cross, and the uneven
+radii are what keep it from looking manufactured.
 
 Buttons use the node's construction at a larger scale: a face over a darker
 plate, pressed down onto it. The nodes offset by 2px, a button by 4.

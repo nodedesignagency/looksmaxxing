@@ -9,35 +9,57 @@ import Svg, { Path } from 'react-native-svg';
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 /**
- * The bumpy top edge of the lesson panel — the same trick Duolingo uses to make
- * its result card read as a bank of foliage, except here the motif is cloud,
- * which is what the screen is already full of.
+ * The billowing top edge of the lesson panel.
  *
- * Each bump is a semicircle sitting on the panel's top line, so bump height is
- * always half its width: vary the widths and the silhouette varies with them,
- * with no seams to line up.
+ * Not a row of tangent semicircles — those meet in a sharp cusp at every
+ * valley, which is what makes an edge read as scalloped rather than soft. These
+ * are whole circles of deliberately unequal size, centred on the panel's top
+ * line and overlapping their neighbours heavily. Every circle is emitted as a
+ * subpath of one path wound the same way, so the nonzero fill rule unions them
+ * and the valleys come out as the shallow arcs where two circles cross.
+ *
+ * Centres sit on the top line, so each circle's lower half falls inside the
+ * panel body and is clipped away by the SVG's own height.
  */
 
-/** Relative bump widths, deliberately uneven so the edge never looks stamped. */
-const BUMPS = [1.0, 1.55, 1.15, 1.75, 0.92, 1.4, 1.08, 1.6, 0.95];
-const TOTAL = BUMPS.reduce((a, b) => a + b, 0);
+/**
+ * cx as a fraction of width, r as a fraction of width. One dominant lobe with
+ * smaller ones around it — even sizes are what make a cloud look manufactured.
+ * The outermost centres sit just past the edges so the corners stay covered.
+ */
+const LOBES = [
+  { cx: -0.02, r: 0.115 },
+  { cx: 0.15, r: 0.135 },
+  { cx: 0.38, r: 0.19 },
+  { cx: 0.6, r: 0.13 },
+  { cx: 0.79, r: 0.155 },
+  { cx: 0.98, r: 0.125 },
+];
 
-/** Height the edge needs: the tallest bump's radius, plus a hair of headroom. */
+const MAX_R = Math.max(...LOBES.map((l) => l.r));
+
+/** Tall enough for the biggest lobe to clear the panel's top line. */
 export function cloudEdgeHeight(width: number) {
-  return (Math.max(...BUMPS) / TOTAL) * width * 0.5 + 1;
+  return Math.round(MAX_R * width);
 }
 
 function cloudPath(width: number, height: number) {
-  let x = 0;
-  let d = `M 0 ${height.toFixed(2)}`;
-  for (const w of BUMPS) {
-    const bw = (w / TOTAL) * width;
-    const r = bw / 2;
-    // Sweep 1 travelling left to right bulges the arc upward.
-    d += ` A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 1 ${(x + bw).toFixed(2)} ${height.toFixed(2)}`;
-    x += bw;
-  }
-  return `${d} L ${width.toFixed(2)} ${height.toFixed(2)} Z`;
+  // Two half-arcs per circle, all swept the same way so the union fills solid.
+  const circles = LOBES.map(({ cx, r }) => {
+    const x = cx * width;
+    const rad = r * width;
+    return (
+      `M ${(x - rad).toFixed(2)} ${height.toFixed(2)}` +
+      ` a ${rad.toFixed(2)} ${rad.toFixed(2)} 0 1 1 ${(rad * 2).toFixed(2)} 0` +
+      ` a ${rad.toFixed(2)} ${rad.toFixed(2)} 0 1 1 ${(-rad * 2).toFixed(2)} 0 Z`
+    );
+  });
+  // A sliver along the bottom, so no antialiasing seam can open up against the
+  // panel body sitting directly beneath.
+  const skirt = `M 0 ${(height - 4).toFixed(2)} H ${width.toFixed(2)} V ${height.toFixed(
+    2,
+  )} H 0 Z`;
+  return [...circles, skirt].join(' ');
 }
 
 type Props = {
