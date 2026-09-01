@@ -34,6 +34,7 @@ type Props = {
 };
 
 const FACE = layout.nodeFace;
+const PLATE = layout.nodePlateOffset;
 
 export default function SkillNode({ lesson, status, index, x, y, onPress, drawKey }: Props) {
   const locked = status === 'locked';
@@ -116,10 +117,13 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
     ],
   }));
 
-  // Circles read a press better as a squash into their shadow than a shove.
+  // Pressing settles the face down onto its plate, which is exactly the 2px the
+  // frame offsets them by — so a press closes the gap the depth is made of.
   const faceStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - press.value * 0.09 }, { translateY: press.value * 2 }],
-    shadowOpacity: 0.18 * (1 - press.value * 0.7),
+    transform: [
+      { translateX: press.value * PLATE },
+      { translateY: press.value * PLATE },
+    ],
   }));
 
   const haloStyle = useAnimatedStyle(() => ({
@@ -139,14 +143,22 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
             {status === 'current' && (
               <Animated.View style={[styles.halo, haloStyle]} pointerEvents="none" />
             )}
+            {/* Child "2": the plate at (2,2) that reads as the circle's edge. */}
+            <View
+              style={[
+                styles.plate,
+                { backgroundColor: locked ? colors.nodePlateLocked : colors.nodePlate },
+              ]}
+            />
+            {/* Child "1": the face at (0,0). */}
             <Animated.View
               style={[
                 styles.face,
-                locked ? styles.faceLocked : styles.faceOpen,
+                { backgroundColor: locked ? colors.nodeFaceLocked : colors.nodeFace },
                 faceStyle,
               ]}
             >
-              <NodeGlyph status={status} />
+              <NodeGlyph status={status} locked={locked} />
             </Animated.View>
           </View>
 
@@ -158,7 +170,7 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
               {lesson.title}
             </Text>
             <View style={[styles.xpPill, locked && styles.xpPillMuted]}>
-              <BoltIcon size={11} color={colors.xpBolt} />
+              <BoltIcon size={12} color={colors.xpGreen} />
               <Text style={[type.xp, styles.xpText]}>+{lesson.xp} XP</Text>
             </View>
           </Animated.View>
@@ -168,20 +180,17 @@ export default function SkillNode({ lesson, status, index, x, y, onPress, drawKe
   );
 }
 
-function NodeGlyph({ status }: { status: LessonStatus }) {
-  if (status === 'done') return <CheckIcon size={24} color={colors.checkGlyph} weight={3} />;
-  if (status === 'current') return <PlayIcon size={19} color={colors.playGlyph} />;
-  return <KeyholeIcon size={22} color={colors.lockGlyph} />;
+function NodeGlyph({ status, locked }: { status: LessonStatus; locked: boolean }) {
+  const color = locked ? colors.nodeGlyphLocked : colors.nodeGlyph;
+  if (status === 'done') return <CheckIcon size={25} color={color} weight={3.4} />;
+  if (status === 'current') return <PlayIcon size={19} color={color} />;
+  return <KeyholeIcon size={22} color={color} />;
 }
 
 const styles = StyleSheet.create({
   group: { position: 'absolute' },
   row: { flexDirection: 'row', alignItems: 'flex-start' },
-  slot: {
-    width: layout.nodeSize,
-    height: layout.nodeSize,
-    alignItems: 'flex-start',
-  },
+  slot: { width: layout.nodeSize, height: layout.nodeSize },
   halo: {
     position: 'absolute',
     top: 0,
@@ -191,25 +200,23 @@ const styles = StyleSheet.create({
     borderRadius: radii.node,
     backgroundColor: colors.nodeFace,
   },
+  plate: {
+    position: 'absolute',
+    top: PLATE,
+    left: PLATE,
+    width: FACE,
+    height: FACE,
+    borderRadius: radii.node,
+  },
   face: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     width: FACE,
     height: FACE,
     borderRadius: radii.node,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  faceOpen: {
-    backgroundColor: colors.nodeFace,
-    shadowColor: '#14405C',
-    shadowOpacity: 0.18,
-    shadowRadius: 7,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
-  },
-  faceLocked: {
-    backgroundColor: colors.nodeLocked,
-    borderWidth: 1,
-    borderColor: colors.nodeLockedEdge,
   },
   label: {
     marginLeft: layout.labelOffsetX - layout.nodeSize,
@@ -226,5 +233,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.xpChip,
   },
   xpPillMuted: { backgroundColor: colors.xpChipMuted },
-  xpText: { marginLeft: 4, color: colors.xpText },
+  xpText: { marginLeft: 4, color: colors.xpGreen },
 });

@@ -10,44 +10,51 @@
 export const colors = {
   // Sky --------------------------------------------------------------------
   skyTop: '#9BCCEB',
-  sky: '#88C0E3',
+  sky: '#8CC2E4',
   cloud: '#FFFFFF',
 
   // The road ---------------------------------------------------------------
   road: '#FFFFFF',
-  /** Dashed centre line — a desaturated blue-grey on the white surface. */
-  roadDash: '#C3DAEA',
-  roadShadow: 'rgba(46, 96, 133, 0.14)',
+  /** Dashed centre line, reusing the chip blue. */
+  roadDash: '#C3DDEF',
+  roadShadow: 'rgba(88, 138, 171, 0.16)',
 
   // Ink --------------------------------------------------------------------
-  ink: '#1D3F55',
-  inkMuted: '#7E9CB0',
+  /** Chip and node labels: the frame sets these to pure black. */
+  ink: '#000000',
+  /** Labels under the header scrim and on locked nodes. */
+  inkMuted: '#5F86A2',
   title: '#FFFFFF',
 
-  // Node states ------------------------------------------------------------
+  /**
+   * Node circles ("circle" frame: a 48x48 face at 0,0 over an identical 48x48
+   * plate at 2,2). Face, plate and glyph are the only two colours in the group.
+   */
   nodeFace: '#FFFFFF',
-  nodeLocked: 'rgba(255, 255, 255, 0.42)',
-  nodeLockedEdge: 'rgba(255, 255, 255, 0.55)',
-  checkGlyph: '#2E5670',
-  playGlyph: '#4E88AE',
-  lockGlyph: '#8FAEC4',
+  nodePlate: '#588AAB',
+  nodeGlyph: '#588AAB',
+  nodeFaceLocked: 'rgba(255, 255, 255, 0.5)',
+  nodePlateLocked: 'rgba(88, 138, 171, 0.38)',
+  nodeGlyphLocked: 'rgba(88, 138, 171, 0.65)',
 
   // "+25 XP" pill ----------------------------------------------------------
   xpChip: '#FFFFFF',
-  xpChipMuted: 'rgba(255, 255, 255, 0.5)',
-  xpBolt: '#3FBF6F',
-  xpText: '#5F7F94',
+  xpChipMuted: 'rgba(255, 255, 255, 0.55)',
+  /** Bolt and label are both green. */
+  xpGreen: '#22C55E',
 
   // Category chips ---------------------------------------------------------
-  chipIdle: 'rgba(255, 255, 255, 0.32)',
-  chipActive: 'rgba(255, 255, 255, 0.92)',
-  chipEdge: 'rgba(255, 255, 255, 0.5)',
+  chipIdle: '#C3DDEF',
+  chipActive: '#F6FAFF',
+  /** ECF0F9 — full strength on the selected chip, half on the rest. */
+  chipEdge: '#ECF0F9',
+  chipEdgeIdle: 'rgba(236, 240, 249, 0.5)',
 
   // Tab bar ----------------------------------------------------------------
   tabBar: '#FFFFFF',
   tabPill: '#DCEBF7',
   tabIdle: '#1D3F55',
-  tabActive: '#4E88AE',
+  tabActive: '#588AAB',
 
   surface: '#FFFFFF',
   scrim: 'rgba(18, 52, 74, 0.4)',
@@ -60,9 +67,13 @@ export const layout = {
   /** Title x=20; the node column starts at x=40. */
   gutter: 20,
 
-  /** "Frame 2147236483" — a 50x50 frame holding a 48x48 circular face. */
+  /**
+   * "circle" — a 50x50 frame holding two 48x48 children: the white face at
+   * (0,0) and a #588AAB plate at (2,2) showing through as the depth edge.
+   */
   nodeSize: 50,
   nodeFace: 48,
+  nodePlateOffset: 2,
 
   /** Measured y-deltas between node frames: 150, 150, 151, 148. */
   nodeSpacing: 150,
@@ -81,6 +92,7 @@ export const layout = {
   chipHeight: 40,
   chipGap: 8,
   chipPadding: 10,
+  chipGapInner: 6,
   chipIcon: 20,
 
   /** "mainContainer" — 354x61 at (18, 763), 20px above the 844 baseline. */
@@ -108,31 +120,39 @@ export const road = {
 } as const;
 
 export const radii = {
-  /** Nodes are circles: half of the 48px face. */
-  node: 24,
-  chip: 20,
+  /** The frame sets 30 on a 48px face and 38 on a 40px chip; both fully round. */
+  node: layout.nodeFace / 2,
+  chip: layout.chipHeight / 2,
   pill: 999,
   sheet: 28,
   card: 18,
 } as const;
 
 /**
- * System font throughout — the frame's type is a neutral grotesque, which is
- * what San Francisco / Roboto already are on the two target platforms.
+ * Geist, the family the Figma file uses. Weights are named rather than numeric
+ * because React Native picks a face by family name, not by fontWeight, once a
+ * custom font is loaded.
  */
+export const fonts = {
+  regular: 'Geist_400Regular',
+  medium: 'Geist_500Medium',
+  semiBold: 'Geist_600SemiBold',
+  bold: 'Geist_700Bold',
+} as const;
+
 export const type = {
   /** "Skill Path" — a 105x17 text box at (20, 70). */
-  screenTitle: { fontSize: 26, lineHeight: 32, fontWeight: '700' },
+  screenTitle: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 32 },
   /** Node titles, e.g. "Beginner Body weight" at 156x11. */
-  nodeTitle: { fontSize: 16, lineHeight: 20, fontWeight: '600' },
+  nodeTitle: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 20 },
   /** "+25 XP" at 32x7. */
-  xp: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  xp: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14 },
   /** Chip labels, e.g. "Oral Posture" at 90x11. */
-  chip: { fontSize: 16, lineHeight: 20, fontWeight: '600' },
+  chip: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 20 },
   /** Tab labels in 78x13 boxes. */
-  tab: { fontSize: 12, lineHeight: 15, fontWeight: '600' },
-  sheetTitle: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
-  button: { fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  tab: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 15 },
+  sheetTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28 },
+  button: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 22 },
 } as const;
 
 /** Spring presets, so every gesture in the app feels related. */

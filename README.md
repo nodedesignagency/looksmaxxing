@@ -44,24 +44,37 @@ Geometry is transcribed 1:1 from the frame — node positions, the 150px vertica
 rhythm, the 48px face over its 2px shadow, chip padding, the 354x61 tab bar at an
 18px inset, the 390x844 reference frame.
 
-Colour and type are read off a render of the frame, because the Figma MCP
-connection hit the account plan's tool-call limit right after returning the
-layer tree — `get_design_context`, `get_screenshot` and `download_assets` all
-came back capped, so no variables and no exports.
+The Figma MCP connection is capped on this account — `get_design_context`,
+`get_screenshot` and `download_assets` all return the plan's tool-call limit —
+so nothing could be pulled automatically. These values were instead read off the
+inspector panel and transcribed by hand, and they are exact:
 
-Everything visual is therefore matched by eye, and these are redraws standing in
-for assets that could not be exported:
+| Element | Figma |
+| --- | --- |
+| Chip, selected | fill `F6FAFF`, 1px inside stroke `ECF0F9`, radius 38 |
+| Chip, idle | fill `C3DDEF`, 1px inside stroke `ECF0F9` @50% |
+| Chip metrics | 40 tall, 10 padding, 6 gap, label `000000` |
+| Node face (child `1`) | 48x48 at (0,0), radius 30, fill `FFFFFF` |
+| Node plate (child `2`) | 48x48 at (2,2), radius 30, fill `588AAB` |
+| Node glyph | `588AAB` |
+| "+25 XP" | white pill, bolt and label both green |
+| Type | Geist |
 
-| What | Currently | Figma layer it stands in for |
+The node's depth is that second plate, not a blur: two identical circles two
+pixels apart, the lower one showing through as a crescent. Pressing a node
+slides the face those two pixels onto its plate, closing the gap the depth is
+made of.
+
+Still redrawn, because they are raster fills that could not be exported:
+
+| What | Currently | Figma layer |
 | --- | --- | --- |
-| Clouds | soft-edged ellipse clusters | `07_Clouds 1`, `08_Clouds 1`, `image-from-rawpixel-...` (photographic plates) |
-| Chip icons | flat redraws in the screen's blue/slate | `freepik_..._Photoroom` 20x20 rendered 3D icons |
+| Clouds | soft-edged ellipse clusters | `07_Clouds 1`, `08_Clouds 1`, `image-from-rawpixel-...` |
+| Chip icons | flat redraws in `588AAB` | `freepik_..._Photoroom` 20x20 rendered 3D icons |
 | Node/tab icons | drawn on Solar's 24px grid | `solar:play-bold`, `Interface / Check`, `Linear / ... Home Angle`, `Cart Large`, `Chart 2` |
 | Road curve | switchbacks reconstructed from the render | `Vector 4915` / `Vector 4916` |
-| Type | system font (SF Pro / Roboto) | unknown |
 
-Every colour, radius and road dimension lives in `src/theme/tokens.ts`, so
-re-syncing is a one-file edit once the real values are available.
+Every colour, radius and road dimension lives in `src/theme/tokens.ts`.
 
 ## Layout
 

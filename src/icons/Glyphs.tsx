@@ -127,9 +127,9 @@ export const BoltIcon = ({ size = 24, color = '#000' }: GlyphProps) => (
  * slate, which sits better beside the rest of the UI than saturated emoji would.
  */
 
-const ICON_BLUE = '#4E88AE';
-const ICON_DEEP = '#2E5670';
-const ICON_LIGHT = '#BCD8EA';
+const ICON_BLUE = '#588AAB';
+const ICON_DEEP = '#31607F';
+const ICON_LIGHT = '#C3DDEF';
 
 export const DumbbellIcon = ({ size = 24 }: GlyphProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

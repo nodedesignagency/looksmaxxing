@@ -177,7 +177,7 @@ function Tab({
             <Icon size={20} color={colors.tabIdle} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, on]}>
-            <Icon size={20} color={colors.tabActive} weight={1.9} />
+            <Icon size={20} color={colors.tabActive} weight={2} />
           </Animated.View>
         </Animated.View>
         <Animated.Text style={[type.tab, styles.label, labelStyle]}>{tab.label}</Animated.Text>

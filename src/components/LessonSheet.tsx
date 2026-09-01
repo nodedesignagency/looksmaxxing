@@ -135,16 +135,16 @@ export default function LessonSheet({ lesson, status, onClose, onComplete }: Pro
           <View style={styles.head}>
             <View style={styles.badge}>
               {isDone ? (
-                <CheckIcon size={24} color={colors.checkGlyph} weight={3} />
+                <CheckIcon size={25} color={colors.nodeGlyph} weight={3.4} />
               ) : (
-                <PlayIcon size={19} color={colors.playGlyph} />
+                <PlayIcon size={19} color={colors.nodeGlyph} />
               )}
             </View>
             <View style={styles.headText}>
               <Text style={[type.sheetTitle, { color: colors.ink }]}>{shown.title}</Text>
               <View style={styles.meta}>
-                <BoltIcon size={12} color={colors.xpBolt} />
-                <Text style={[type.xp, { color: colors.xpText, marginLeft: 4 }]}>
+                <BoltIcon size={12} color={colors.xpGreen} />
+                <Text style={[type.xp, { color: colors.xpGreen, marginLeft: 4 }]}>
                   +{shown.xp} XP
                 </Text>
               </View>
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: colors.playGlyph,
+    backgroundColor: colors.nodeGlyph,
   },
   ctaDone: { backgroundColor: colors.tabPill },
   ctaFill: {

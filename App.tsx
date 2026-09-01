@@ -1,3 +1,9 @@
+// Subpath imports so Metro bundles only the four faces used, not all 18.
+import Geist_400Regular from '@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf';
+import Geist_500Medium from '@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf';
+import Geist_600SemiBold from '@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf';
+import Geist_700Bold from '@expo-google-fonts/geist/700Bold/Geist_700Bold.ttf';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,12 +17,20 @@ import { colors } from './src/theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+  });
+
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         {/* Dark glyphs, as the frame's status bar shows against the light sky. */}
         <StatusBar style="dark" />
-        <Shell />
+        {/* Hold the sky until Geist is ready, so no frame renders in a fallback. */}
+        {fontsLoaded ? <Shell /> : <Splash />}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

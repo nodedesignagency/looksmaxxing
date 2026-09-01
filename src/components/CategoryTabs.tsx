@@ -37,7 +37,8 @@ type Props = {
 
 type Slot = { x: number; width: number };
 
-const CHIP_CLEAR = 'rgba(255, 255, 255, 0)';
+/** The pill supplies the selected fill, so the chip's own fades out under it. */
+const CHIP_CLEAR = 'rgba(195, 221, 239, 0)';
 
 export default function CategoryTabs({ paths, activeId, onChange }: Props) {
   const [slots, setSlots] = useState<Record<string, Slot>>({});
@@ -150,6 +151,7 @@ function Chip({
     transform: [{ scale: 1 - press.value * 0.05 }],
     // Fade the chip's own background out so the sliding pill shows through.
     backgroundColor: interpolateColor(sel.value, [0, 1], [colors.chipIdle, CHIP_CLEAR]),
+    borderColor: interpolateColor(sel.value, [0, 1], [colors.chipEdgeIdle, CHIP_CLEAR]),
   }));
 
   return (
@@ -182,10 +184,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.chipPadding,
     borderRadius: radii.chip,
     borderWidth: 1,
-    borderColor: colors.chipEdge,
   },
   chipIcon: { width: layout.chipIcon, height: layout.chipIcon },
-  chipText: { marginLeft: 6, color: colors.ink },
+  chipText: { marginLeft: layout.chipGapInner, color: colors.ink },
   pill: {
     position: 'absolute',
     left: 0,
