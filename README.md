@@ -176,6 +176,21 @@ Each lobe carries four motions at once:
 The edge is drawn on a canvas wider than the panel and overlaps the body, so no
 amount of motion exposes a corner or opens a seam.
 
+Two things about how that motion is wired are load-bearing:
+
+- **Lobes animate through path data**, rebuilding each circle from an animated
+  centre and radius. An earlier version wrapped each lobe in an animated `<G>`
+  and drove `scale`/`translate` on the group instead. That animated correctly in
+  a browser and did nothing whatsoever on device, and because the paths carried
+  no `d` of their own, "nothing" meant the lobes never drew at all — the panel
+  showed its flat skirt and no cloud. Each path now also carries its resting
+  shape as a static prop, so the worst case is a still cloud rather than none.
+- **Shared values are read directly in the hook body**, not in a helper it
+  calls. Reanimated decides what to subscribe to by reading the hook's own
+  source; move the reads into a function it cannot see into and it subscribes to
+  nothing, so the props evaluate once and sit frozen. The symptom is subtle —
+  the cloud renders, at whatever size the first frame happened to compute.
+
 A previous, simpler version of this edge — static, no depth — is kept on the
 `cloud-v1-static` branch.
 
