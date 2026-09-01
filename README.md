@@ -184,6 +184,29 @@ To use a real clip, drop it in as `assets/lesson-clip.mp4` and uncomment the
 WebM. `CLIP_SECONDS` sets how long the interlude runs, and it is always
 skippable.
 
+## Keeping it light
+
+Running every category on one road made the screen roughly five thousand points
+tall, and three things quietly scaled with that:
+
+- **Cloud count.** The backdrop repeated a cloud pair per 700pt of content, so a
+  taller screen meant proportionally more sky — 19 clouds of 6 gradient puffs
+  each. Now one pair per 1600pt, four puffs each.
+- **The road's centre line** marched its dashes on an endless loop. On a
+  5000-point path that is a full re-stroke every frame, forever, for a drift
+  almost nobody would notice. It is static now.
+- **A single SVG the height of the whole road.** `SkillRoad` slices into 1100pt
+  bands, each drawing the same path through a group shifted by its own offset,
+  so no layer is ever taller than a band.
+
+Nodes are windowed too: each is an absolutely positioned view with a gesture
+handler and two SVGs, and all four categories come to over thirty. Only those
+within 700pt of the viewport are mounted, tracked in coarse 500pt bands so it
+re-renders about once per screen of travel rather than per frame.
+
+Together that halved the element count and cut the tallest layer from 5143pt to
+1100.
+
 ## Node states
 
 The frame draws three: a check on completed lessons, a play glyph on the one

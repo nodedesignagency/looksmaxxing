@@ -41,13 +41,13 @@ function Cloud({
   seed: string;
 }) {
   const id = `cloud-${seed}`;
+  // Four puffs, not six. Every one is a gradient-filled node in the native view
+  // tree, and the sky carries several clouds.
   const puffs: Puff[] = [
-    { cx: 30, cy: 66, rx: 34, ry: 17, o: 0.75 },
-    { cx: 60, cy: 52, rx: 36, ry: 22, o: 0.9 },
-    { cx: 96, cy: 46, rx: 32, ry: 21, o: 0.9 },
-    { cx: 128, cy: 60, rx: 32, ry: 17, o: 0.7 },
-    { cx: 80, cy: 74, rx: 74, ry: 15, o: 0.85 },
-    { cx: 108, cy: 78, rx: 46, ry: 12, o: 0.6 },
+    { cx: 52, cy: 58, rx: 44, ry: 24, o: 0.85 },
+    { cx: 104, cy: 48, rx: 40, ry: 24, o: 0.9 },
+    { cx: 80, cy: 74, rx: 74, ry: 16, o: 0.85 },
+    { cx: 124, cy: 66, rx: 40, ry: 18, o: 0.7 },
   ];
   return (
     <Svg width={width} height={height} viewBox="0 0 160 100">
@@ -99,8 +99,9 @@ export default function Backdrop({ scrollY, contentHeight }: Props) {
   const driftB = useDrift(13, 14000);
   const driftC = useDrift(7, 17000);
 
-  // Positions follow the frame's cloud plates, then repeat down the scroll.
-  const repeats = Math.max(1, Math.ceil(contentHeight / 700));
+  // One repeat per 1600px rather than per 700. The road now runs every category
+  // end to end, so tying cloud count to content height quadrupled the sky.
+  const repeats = Math.max(1, Math.ceil(contentHeight / 1600));
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.sky]} pointerEvents="none">
@@ -129,17 +130,17 @@ export default function Backdrop({ scrollY, contentHeight }: Props) {
       {Array.from({ length: repeats }, (_, i) => (
         <React.Fragment key={i}>
           <Animated.View
-            style={[styles.layer, { top: 900 + i * 700, left: -110 }, mid]}
+            style={[styles.layer, { top: 900 + i * 1600, left: -110 }, mid]}
           >
             <Animated.View style={driftA}>
-              <Cloud width={260} height={162} opacity={0.8} seed={`l${i}`} />
+              <Cloud width={280} height={175} opacity={0.8} seed={`l${i}`} />
             </Animated.View>
           </Animated.View>
           <Animated.View
-            style={[styles.layer, { top: 1180 + i * 700, left: 244 }, near]}
+            style={[styles.layer, { top: 1620 + i * 1600, left: 232 }, near]}
           >
             <Animated.View style={driftB}>
-              <Cloud width={230} height={144} opacity={0.72} seed={`r${i}`} />
+              <Cloud width={250} height={156} opacity={0.72} seed={`r${i}`} />
             </Animated.View>
           </Animated.View>
         </React.Fragment>

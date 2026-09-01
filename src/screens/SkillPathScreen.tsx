@@ -30,6 +30,12 @@ type Props = {
 /** Breathing room where one category's road hands over to the next. */
 const SECTION_GAP = 70;
 
+/** Scroll distance per mount band. */
+const BAND = 500;
+
+/** How far beyond the viewport a node stays mounted. */
+const MOUNT_MARGIN = 700;
+
 type Row = {
   pathId: string;
   lesson: Lesson;
@@ -44,7 +50,7 @@ export default function SkillPathScreen({
   onSheetOpenChange,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const [activeId, setActiveId] = useState(PATHS[0].id);
   const [selected, setSelected] = useState<{ lesson: Lesson; status: LessonStatus } | null>(null);
@@ -55,6 +61,17 @@ export default function SkillPathScreen({
   const scrollY = useSharedValue(0);
   const section = useSharedValue(0);
   const scroller = useAnimatedRef<Animated.ScrollView>();
+  const lastBand = useSharedValue(0);
+
+  /**
+   * Which 500px band of the scroll we are in. Every node is an absolutely
+   * positioned view with its own gesture handler and two SVGs, and all four
+   * categories together come to well over thirty of them — far too many to keep
+   * mounted at once. Only nodes near this band are rendered. The band is coarse
+   * on purpose: it re-renders roughly once per screen of travel rather than per
+   * frame.
+   */
+  const [band, setBand] = useState(0);
 
   // The frame is 390 wide; scale x so the layout keeps its proportions on wider
   // handsets rather than hugging the left edge.
@@ -131,6 +148,7 @@ export default function SkillPathScreen({
 
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
+
     const at = e.contentOffset.y + probe;
     let i = 0;
     for (let k = 0; k < starts.length; k++) {
@@ -140,7 +158,20 @@ export default function SkillPathScreen({
       section.value = i;
       runOnJS(setActiveId)(ids[i]);
     }
+
+    const b = Math.floor(e.contentOffset.y / BAND);
+    if (b !== lastBand.value) {
+      lastBand.value = b;
+      runOnJS(setBand)(b);
+    }
   });
+
+  /** Nodes within a screen either side of the band stay mounted. */
+  const visible = useMemo(() => {
+    const from = band * BAND - MOUNT_MARGIN;
+    const to = band * BAND + height + MOUNT_MARGIN;
+    return rows.filter((r) => r.y + layout.nodeSize > from && r.y < to);
+  }, [rows, band, height]);
 
   const handleNodePress = useCallback((lesson: Lesson, status: LessonStatus) => {
     // Locked nodes answer with the shake inside SkillNode; nothing opens.
@@ -200,7 +231,7 @@ export default function SkillPathScreen({
       >
         <SkillRoad width={width} height={contentHeight} road={road} drawKey="all" />
 
-        {rows.map((row, i) => (
+        {visible.map((row, i) => (
           <SkillNode
             key={row.lesson.id}
             lesson={row.lesson}
