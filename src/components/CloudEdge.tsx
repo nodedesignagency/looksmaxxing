@@ -5,7 +5,6 @@ import Animated, {
   SharedValue,
   interpolateColor,
   useAnimatedProps,
-  useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -22,49 +21,54 @@ const AnimatedG = Animated.createAnimatedComponent(G);
  * Not a row of tangent semicircles — those meet in a sharp cusp at every
  * valley, which is what makes an edge read as scalloped rather than soft. These
  * are whole circles of deliberately unequal size, centred on the panel's top
- * line and overlapping their neighbours heavily. Each is emitted as a subpath
- * of one path wound the same way, so the nonzero fill rule unions them and the
- * valleys come out as the shallow arcs where two circles cross.
+ * line and overlapping their neighbours heavily. The valleys are the shallow
+ * arcs where two circles cross.
  *
  * Depth comes from drawing every circle a second time as a stroke, inset from
  * its own edge, with fills and strokes interleaved lobe by lobe. Each lobe's
  * fill paints over the arc of the lobe before it, so what survives is a short
  * curve in the valley where the two meet — the way one puff reads as sitting in
- * front of another. Drawing every arc after every fill instead leaves whole
- * rings floating on the surface, which is what this looked like before.
- * Insetting means an arc can never stray outside the silhouette, so nothing
- * needs clipping.
+ * front of another. Insetting means an arc can never stray outside the
+ * silhouette, so nothing needs clipping.
  *
- * Every lobe then rises, falls and slides on its own loop, at its own period.
- * Moving the edge as one rigid piece is barely legible as motion; moving the
- * lobes against each other is what actually reads as billowing, because the
- * valleys between them deepen and fill as they go. Each lobe keeps its own
- * fill-then-arc pair inside its group, so the interleaved draw order — and with
- * it the depth — survives the animation.
+ * Each lobe carries four motions at once:
+ *   - it inflates and tumbles into place as the panel opens, staggered, so the
+ *     cloud assembles itself at the moment the eye is already on it;
+ *   - it drifts on its own long loop forever after;
+ *   - it lags behind the panel while the panel is dragged, so the bank stretches
+ *     rather than travelling as one rigid slab;
+ *   - it pops as a wave running outward from the button when the button is hit.
  */
 
 /**
  * cx and r as fractions of the panel width. One dominant lobe with smaller ones
  * around it — even sizes are what make a cloud look manufactured. The outermost
  * centres sit past the edges so the corners stay covered.
+ *
+ * `rise`/`sway` are the idle travel in points, `period` its loop length, `lag`
+ * how far the lobe trails the panel under a drag, and `tumble` the tilt it
+ * unfolds from.
  */
 const LOBES = [
-  { cx: -0.02, r: 0.115, rise: 7, sway: 5, period: 5200 },
-  { cx: 0.15, r: 0.135, rise: 9, sway: 6, period: 6900 },
-  { cx: 0.38, r: 0.19, rise: 11, sway: 4, period: 8300 },
-  { cx: 0.6, r: 0.13, rise: 8, sway: 6, period: 5900 },
-  { cx: 0.79, r: 0.155, rise: 10, sway: 5, period: 7400 },
-  { cx: 0.98, r: 0.125, rise: 7, sway: 4, period: 6300 },
+  { cx: -0.02, r: 0.115, rise: 14, sway: 9, period: 7300, lag: 0.1, tumble: -14 },
+  { cx: 0.15, r: 0.135, rise: 18, sway: 11, period: 9400, lag: 0.14, tumble: -9 },
+  { cx: 0.38, r: 0.19, rise: 22, sway: 8, period: 11200, lag: 0.2, tumble: 6 },
+  { cx: 0.6, r: 0.13, rise: 16, sway: 11, period: 8200, lag: 0.13, tumble: -6 },
+  { cx: 0.79, r: 0.155, rise: 20, sway: 9, period: 10100, lag: 0.17, tumble: 10 },
+  { cx: 0.98, r: 0.125, rise: 14, sway: 8, period: 8700, lag: 0.11, tumble: 15 },
 ];
 
 const MAX_R = Math.max(...LOBES.map((l) => l.r));
 
-/** Bleed each side, so drift and stretch never expose the panel's corners. */
+/** Bleed each side, so drift never exposes the panel's corners. */
 const BLEED = 16;
 
-/** Tall enough for the biggest lobe to clear the panel's top line. */
+/** Room above the resting silhouette for a lobe at the top of its travel. */
+const HEADROOM = 36;
+
+/** Tall enough for the biggest lobe, plus its rise. */
 export function cloudEdgeHeight(width: number) {
-  return Math.round(MAX_R * width);
+  return Math.round(MAX_R * width) + HEADROOM;
 }
 
 function circle(x: number, y: number, r: number) {
@@ -79,20 +83,25 @@ function circle(x: number, y: number, r: number) {
 function buildPaths(width: number, height: number) {
   const canvas = width + BLEED * 2;
   const inset = Math.max(4, width * 0.012);
-  // Deep enough that a lobe sinking to the bottom of its travel cannot lift the
-  // base off the panel body.
-  const skirt = `M 0 ${(height - 16).toFixed(2)} H ${canvas.toFixed(2)} V ${height.toFixed(
+  // Just deep enough to seal against the panel body. Any deeper and its top
+  // edge shows as a flat white band above the lobes while they are still
+  // inflating.
+  const skirt = `M 0 ${(height - 14).toFixed(2)} H ${canvas.toFixed(2)} V ${height.toFixed(
     2,
   )} H 0 Z`;
 
-  const lobes = LOBES.map(({ cx, r, rise, sway, period }) => {
-    const rad = r * width;
+  const lobes = LOBES.map((lobe, i) => {
+    const x = BLEED + lobe.cx * width;
+    const rad = lobe.r * width;
     return {
-      fill: circle(BLEED + cx * width, height, rad),
-      arc: circle(BLEED + cx * width, height, Math.max(2, rad - inset)),
-      rise,
-      sway,
-      period,
+      ...lobe,
+      x,
+      fill: circle(x, height, rad),
+      arc: circle(x, height, Math.max(2, rad - inset)),
+      /** Staggers the unfolding left to right. */
+      formPhase: i * 0.07,
+      /** Distance from the button below, so the press wave travels outward. */
+      ripplePhase: 0.1 + Math.abs(lobe.cx - 0.5) * 0.75,
     };
   });
 
@@ -105,9 +114,15 @@ type Props = {
   progress: SharedValue<number>;
   from: string;
   to: string;
+  /** 0-1 as the panel opens; drives the cloud assembling itself. */
+  open?: SharedValue<number>;
+  /** How far the panel has been dragged down, in points. */
+  drag?: SharedValue<number>;
+  /** 0-1 one-shot; a pop travelling outward from the button. */
+  ripple?: SharedValue<number>;
 };
 
-export default function CloudEdge({ width, progress, from, to }: Props) {
+export default function CloudEdge({ width, progress, from, to, open, drag, ripple }: Props) {
   const height = cloudEdgeHeight(width);
   const { canvas, skirt, lobes } = React.useMemo(
     () => buildPaths(width, height),
@@ -126,36 +141,25 @@ export default function CloudEdge({ width, progress, from, to }: Props) {
     ),
   }));
 
-  // A slow drift of the whole bank, on top of the per-lobe motion. This one is
-  // a plain view transform, so it holds even if animating an SVG group's
-  // translate behaves differently on a given platform.
-  const drift = useSharedValue(0);
-  React.useEffect(() => {
-    drift.value = withRepeat(
-      withTiming(1, { duration: 11000, easing: Easing.inOut(Easing.sin) }),
-      -1,
-      true,
-    );
-  }, [drift]);
-  const driftStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: (drift.value - 0.5) * 10 }],
-  }));
-
   return (
     <View style={[styles.clip, { height }]} pointerEvents="none">
-      <Animated.View style={[styles.canvas, { left: -BLEED }, driftStyle]}>
+      <View style={[styles.canvas, { left: -BLEED }]}>
         <Svg width={canvas} height={height}>
           <AnimatedPath d={skirt} animatedProps={fillProps} />
           {lobes.map((lobe, i) => (
             <Lobe
               key={i}
               lobe={lobe}
+              baseY={height}
               fillProps={fillProps}
               arcProps={arcProps}
+              open={open}
+              drag={drag}
+              ripple={ripple}
             />
           ))}
         </Svg>
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -169,30 +173,62 @@ type LobeShape = ReturnType<typeof buildPaths>['lobes'][number];
  */
 function Lobe({
   lobe,
+  baseY,
   fillProps,
   arcProps,
+  open,
+  drag,
+  ripple,
 }: {
   lobe: LobeShape;
+  baseY: number;
   fillProps: ReturnType<typeof useAnimatedProps>;
   arcProps: ReturnType<typeof useAnimatedProps>;
+  open?: SharedValue<number>;
+  drag?: SharedValue<number>;
+  ripple?: SharedValue<number>;
 }) {
-  const t = useSharedValue(0);
+  const idle = useSharedValue(0);
 
   React.useEffect(() => {
-    t.value = withRepeat(
+    idle.value = withRepeat(
       withTiming(1, { duration: lobe.period, easing: Easing.inOut(Easing.sin) }),
       -1,
       true,
     );
-  }, [t, lobe.period]);
+  }, [idle, lobe.period]);
 
-  const motion = useAnimatedProps(() => ({
-    translateX: (t.value - 0.5) * 2 * lobe.sway,
-    translateY: (0.5 - t.value) * 2 * lobe.rise,
-  }));
+  const motion = useAnimatedProps(() => {
+    // Unfold: each lobe waits its turn, then inflates and straightens up.
+    const o = open ? open.value : 1;
+    const span = 1 - lobe.formPhase;
+    const form = Math.min(1, Math.max(0, (o - lobe.formPhase) / span));
+
+    // Idle drift, forever.
+    const t = idle.value;
+    const rise = (0.5 - t) * 2 * lobe.rise;
+    const sway = (t - 0.5) * 2 * lobe.sway;
+
+    // Trail the panel while it is being dragged, so the bank stretches.
+    const pulled = drag ? Math.min(90, Math.max(0, drag.value)) : 0;
+
+    // A bell centred on this lobe's turn in the wave.
+    const r = ripple ? ripple.value : 0;
+    const pop = r > 0 && r < 1 ? Math.exp(-Math.pow((r - lobe.ripplePhase) / 0.17, 2)) : 0;
+
+    // Starts at 0.45 rather than near zero: the biggest lobes have to stay
+    // taller than the skirt through the whole unfold, or its straight top edge
+    // is what you see instead of a cloud.
+    return {
+      scale: (0.45 + form * 0.55) * (1 + pop * 0.13),
+      rotation: (1 - form) * lobe.tumble,
+      translateX: sway,
+      translateY: rise + (1 - form) * 18 - pulled * lobe.lag - pop * 11,
+    };
+  });
 
   return (
-    <AnimatedG animatedProps={motion}>
+    <AnimatedG originX={lobe.x} originY={baseY} animatedProps={motion}>
       <AnimatedPath d={lobe.fill} animatedProps={fillProps} />
       <AnimatedPath
         d={lobe.arc}

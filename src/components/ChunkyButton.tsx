@@ -2,10 +2,13 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
+  SharedValue,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { radii, springs, type } from '../theme/tokens';
 
@@ -26,6 +29,12 @@ type Props = {
   disabled?: boolean;
   /** 0-1 sweep across the face, for the running state. */
   progress?: Animated.SharedValue<number>;
+  /**
+   * Driven 0-1 on press. Read by whatever wants to answer the touch — the
+   * panel's cloud edge uses it as a wave running outward from here. Set in the
+   * gesture worklet, so it starts on contact rather than a frame later.
+   */
+  ripple?: SharedValue<number>;
 };
 
 export default function ChunkyButton({
@@ -36,6 +45,7 @@ export default function ChunkyButton({
   onPress,
   disabled = false,
   progress,
+  ripple,
 }: Props) {
   const press = useSharedValue(0);
 
@@ -46,6 +56,10 @@ export default function ChunkyButton({
         .maxDuration(10_000)
         .onBegin(() => {
           press.value = withSpring(1, springs.press);
+          if (ripple) {
+            ripple.value = 0;
+            ripple.value = withTiming(1, { duration: 760, easing: Easing.linear });
+          }
         })
         .onFinalize(() => {
           press.value = withSpring(0, springs.press);
@@ -53,7 +67,7 @@ export default function ChunkyButton({
         .onEnd(() => {
           runOnJS(onPress)();
         }),
-    [disabled, onPress, press],
+    [disabled, onPress, press, ripple],
   );
 
   const faceStyle = useAnimatedStyle(() => ({

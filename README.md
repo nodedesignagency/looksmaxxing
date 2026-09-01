@@ -157,14 +157,24 @@ where the two meet. Drawing all the arcs after all the fills instead leaves
 whole rings floating on the surface. Insetting means an arc can never stray
 outside the silhouette, so nothing needs clipping.
 
-Every lobe then rises, falls and slides on its own loop at its own period.
-Moving the bank as one rigid piece is barely legible as motion; moving the lobes
-against each other is what reads as billowing, because the valleys deepen and
-fill as they go. A slow drift of the whole bank sits on top of that as a plain
-view transform, so some motion holds even if animating an SVG group's translate
-behaves differently on a given platform. The edge is drawn on a canvas wider
-than the panel and overlaps the body, so no amount of motion exposes a corner or
-opens a seam.
+Each lobe carries four motions at once:
+
+- **It unfolds.** As the panel opens the lobes inflate and straighten from a
+  tilt, staggered left to right, so the cloud assembles itself at the moment the
+  eye is already on the panel. They start at 0.45 scale rather than near zero —
+  the biggest lobes have to stay taller than the skirt through the whole
+  unfold, or its straight top edge is what you see instead of a cloud.
+- **It drifts**, forever, on its own long loop. Moving the bank as one rigid
+  piece is barely legible; moving the lobes against each other is what reads as
+  billowing, because the valleys deepen and fill as they go.
+- **It trails the panel** while the panel is dragged, by an amount that scales
+  with its size, so the bank stretches instead of travelling as a slab.
+- **It pops** when the button is pressed, as a wave timed outward from the
+  centre. The button drives that shared value inside its own gesture worklet, so
+  it starts on contact rather than a frame later.
+
+The edge is drawn on a canvas wider than the panel and overlaps the body, so no
+amount of motion exposes a corner or opens a seam.
 
 A previous, simpler version of this edge — static, no depth — is kept on the
 `cloud-v1-static` branch.

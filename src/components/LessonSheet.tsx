@@ -50,6 +50,8 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
   /** 0 while briefing, 1 on the result card. */
   const win = useSharedValue(0);
   const badge = useSharedValue(0);
+  /** Bumped by the button, read by the cloud edge as an outward wave. */
+  const ripple = useSharedValue(0);
 
   const [shown, setShown] = useState<Lesson | null>(lesson);
   // Held alongside `shown`: the status prop clears the moment the sheet is
@@ -166,6 +168,9 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
             progress={win}
             from={colors.surface}
             to={colors.successTint}
+            open={open}
+            drag={drag}
+            ripple={ripple}
           />
           <Animated.View
             style={[styles.body, { paddingBottom: 22 + insets.bottom }, bodyStyle]}
@@ -215,6 +220,7 @@ export default function LessonSheet({ lesson, status, onClose, onStart }: Props)
             edge={showDone ? colors.successEdge : '#3D6C8A'}
             textColor={colors.surface}
             onPress={showDone ? onClose : start}
+            ripple={ripple}
           />
           </Animated.View>
           {/* Extends past the screen edge: whatever the spring overshoots into
