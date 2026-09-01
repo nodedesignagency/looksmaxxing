@@ -13,6 +13,28 @@ npx expo start
 
 Scan the QR code with Expo Go (iOS or Android).
 
+## Updating
+
+```bash
+cd ~/looksmaxxing
+git fetch origin && git reset --hard origin/claude/figma-app-screen-animations-swxgjb
+npm install
+npx expo start -c
+```
+
+`reset --hard` rather than `pull`, on purpose. `package-lock.json` is tracked, so
+anything that rewrites it locally — `npm install` after deleting it, most often —
+leaves a modified tracked file, and `git pull` aborts rather than overwrite it.
+The pull failing is quiet: the app just keeps running the old code. Resetting
+throws that local churn away and lands exactly what is on the branch.
+
+It also discards any edits of your own in this repo, so commit them first if you
+have any.
+
+`npm install` afterwards is cheap when nothing changed and necessary when a
+dependency did. `-c` clears the Metro cache, which matters whenever a Babel
+plugin or a native module version moved.
+
 ### A note on react-native-worklets
 
 It is pinned to an exact version and repeated in `overrides`, deliberately.
