@@ -321,18 +321,24 @@ So the split is:
 | Copy — every string | `get_metadata` layer names | yes |
 | Colour | read off the rendered frame | no, a reading |
 | Type sizes | derived from each text box's width | no, close |
-| Raster art — medal, gem, crown, avatar | redrawn as vectors | no, stand-ins |
+| Raster art — medal, gem, crown, avatar | exported by hand from the file | yes |
 
-The four vectors are stand-ins for artwork the frame has and this could not
-export. To replace them, drop PNGs with transparency into `assets/home/` and
-swap the glyph for an `Image`:
+Those four could not be pulled through the capped MCP, so they were exported
+from Figma directly and live in `assets/home/` as `medal.png`, `gem.png`,
+`crown.png` and `avatar.png`.
 
-| file | drawn at | export at |
-| --- | --- | --- |
-| `avatar.png` | 40x40 | 120x120 |
-| `medal.png` | 60x60 | 180x180 |
-| `gem.png` | 20 and 12 | 60x60 |
-| `crown.png` | 20x20 | 60x60 |
+Each is drawn **larger than its box**, because the artwork carries transparent
+padding and, on the medal, a glow and sparkles that reach past the badge. The
+node tree gives both numbers — a 20x20 gem frame holding a 31x31 raster, a 60x60
+medal frame holding a 176x117 one — so `Plate` in `Glyphs.tsx` keeps the box for
+layout and lets the art overflow it, centred. Fit the art to the box instead and
+the medal loses its sparkles to the crop; size the box to the art and every row
+beside it shifts.
+
+The crown is the one exception. Its frame puts a 34x35 raster in a 20x20 box,
+but that box clips in Figma and nothing clips here, so at 1.72 the crown ran
+into the "L" of "Level 4". It is sized so its ink fills the 20 it is given,
+which is what the rendered frame shows.
 
 The three quest sprites are the exception: the frame uses the same artworks the
 category chips already use, so they are `require`d from `CHIP_IMAGES` rather

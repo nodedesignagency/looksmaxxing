@@ -114,8 +114,10 @@ export default function HomeScreen() {
               <GemIcon size={20} />
               <Text style={[type.gemCount, styles.gemCount]}>{gems}</Text>
             </Glass>
+            {/* "Avatar [1.0]" — 40x40. The artwork is its own circle, so it
+                needs no plate behind it and no clipping. */}
             <View style={styles.avatar}>
-              <AvatarGlyph size={26} color={colors.nodePlate} />
+              <AvatarGlyph size={40} />
             </View>
           </View>
         </Rise>
@@ -317,16 +319,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gemCount: { marginLeft: 4, color: colors.heading },
-  avatar: {
-    marginLeft: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
+  avatar: { marginLeft: 16 },
 
   streak: { marginHorizontal: GUTTER, marginTop: 16 },
 

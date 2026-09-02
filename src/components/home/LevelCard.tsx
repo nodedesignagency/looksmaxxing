@@ -101,7 +101,7 @@ export default function LevelCard({ level, xp, xpTo, steps, reached }: Props) {
       {/* "Frame 2147236419" — the title row, 326x24. */}
       <View style={styles.top}>
         <View style={styles.titleRow}>
-          <CrownIcon size={20} color={colors.levelFill} />
+          <CrownIcon size={20} />
           <Text style={[type.levelTitle, styles.title]}>Level {level}</Text>
         </View>
         <View style={styles.xpRow}>
