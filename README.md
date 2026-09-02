@@ -96,10 +96,32 @@ sprites, and the icons.
 The frame composites its clouds in **Overlay**, which matters: they are
 grey-white photographs on transparency, and painted normally they sit on the sky
 as grey smudges. `mixBlendMode` exists in React Native but react-native-web
-drops it, so it cannot be checked on both targets from one place — the plates
-are tinted to a pale sky-white instead. The alpha channel is what carries a
-cloud's shape and softness, so tinting lands close to what Overlay produces and
-behaves the same everywhere. `metro.config.js` runs `react-native-svg-transformer`,
+drops it, so it cannot be checked on both targets from one place.
+
+The plates are **baked offline instead**, by `scripts/bake-cloud.py`: each one's
+own luminance is folded into its alpha and its colour set to white. Run it again
+after re-exporting a plate.
+
+Tinting the plates at runtime was the previous answer, and it only worked on
+half of them, because the two exports are built oppositely:
+
+| | RGB | alpha |
+| --- | --- | --- |
+| `cloud-2`, `cloud-3` | pure white throughout | **0% fully opaque** — carries the whole cloud |
+| `cloud-main`, `cloud-1` | grey photograph, luminance 155–240 — **carries the whole cloud** | hard matte, 22% fully opaque |
+
+`tintColor` keeps alpha and discards colour. On the first kind that changes
+nothing. On the second it erases the channel the cloud is actually drawn in and
+leaves the matte: a flat, dense slab with a cut edge, sitting among soft
+feathered neighbours — which is exactly what it looked like. Baking turns the
+second kind into the first, so one rule renders every plate, nothing is tinted
+anywhere, and the modelling survives. The baked plates land between `cloud-2`
+and `cloud-3` at every alpha percentile, which is what makes them read as the
+same weight of cloud.
+
+The original exports are in git history, at `dcc0332`.
+
+`metro.config.js` runs `react-native-svg-transformer`,
 so a `.svg` imports as a component; their colours were rewritten to
 `currentColor` and each takes a `color` prop.
 
@@ -132,10 +154,20 @@ src/
 
 - The road draws itself on from the top with an animated dash offset, then its
   centre line fades up and marches slowly along the surface.
-- Nodes spring in on a 45ms stagger, and only on the opening screenful. Nodes
-  mount and unmount as the road scrolls, so replaying the entrance every time
-  one re-entered the window set off a wave of springs mid-scroll — most of what
-  made the appearance feel heavy.
+- Nodes fade and lift in on a 34ms stagger, and only on the opening screenful.
+  Nodes mount and unmount as the road scrolls, so replaying the entrance every
+  time one re-entered the window set off a wave of them mid-scroll.
+
+  The group animates **opacity and offset only**. Both are compositor work — the
+  layer is rasterised once and then moves. Scale is not: it re-rasterises
+  everything inside it every frame, and inside a node is a 16pt label, an XP pill
+  and its bolt. The entrance scale moved onto the circle, where it costs a flat
+  fill and one small glyph, and the completion pop went with it — the node alone
+  is the sharper beat, and it lands on the glyph that just changed.
+
+  It eases rather than springs, too. A spring that size overshoots by about a
+  tenth, and the overshoot was landing on the label: text scaling past its own
+  size and settling back is what read as wobble.
 - Cloud plates parallax against scroll at three rates and drift on long loops.
 - Nodes squash into their shadow on press; locked ones shake and buzz.
 - The lesson you're on breathes a halo ring.
@@ -241,6 +273,15 @@ tall, and three things quietly scaled with that:
 - **A single SVG the height of the whole road.** `SkillRoad` slices into 1100pt
   bands, each drawing the same path through a group shifted by its own offset,
   so no layer is ever taller than a band.
+- **The draw-on, running in every band at once.** Each band holds the *whole*
+  path — the shift is what picks out its slice — so an animated
+  `strokeDashoffset` on all of them meant re-walking and re-dashing five
+  thousand points, five bands over, three strokes deep, every frame for the
+  length of the animation. Fifteen full re-strokes a frame, and the node
+  entrance was spending those same frames: most of what read as heavy nodes was
+  the road underneath them. Only the bands the opening screen can see draw
+  themselves on now; the rest are plain paths, laid down once. Nothing can watch
+  them draw, and flicking down mid-intro finds a road already there.
 
 Nodes are windowed too: each is an absolutely positioned view with a gesture
 handler and two SVGs, and all four categories come to over thirty. Only those

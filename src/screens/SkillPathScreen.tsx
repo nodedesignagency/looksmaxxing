@@ -76,11 +76,12 @@ export default function SkillPathScreen({
   /**
    * True once the opening entrance has played. Nodes that scroll into the mount
    * window after that appear without animating, so travelling down the road
-   * does not keep setting off springs.
+   * does not keep replaying it. Long enough to cover the last node's stagger
+   * and its 340ms ease, and no longer.
    */
   const [introDone, setIntroDone] = useState(false);
   React.useEffect(() => {
-    const t = setTimeout(() => setIntroDone(true), 1200);
+    const t = setTimeout(() => setIntroDone(true), 700);
     return () => clearTimeout(t);
   }, []);
 
@@ -240,7 +241,13 @@ export default function SkillPathScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ height: contentHeight }}
       >
-        <SkillRoad width={width} height={contentHeight} road={road} drawKey="all" />
+        <SkillRoad
+          width={width}
+          height={contentHeight}
+          viewport={height}
+          road={road}
+          drawKey="all"
+        />
 
         {visible.map((row, i) => (
           <SkillNode

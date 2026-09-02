@@ -33,9 +33,9 @@ type Props = {
   drawKey: string;
   /**
    * Whether this node should play its entrance. Nodes are mounted and unmounted
-   * as the road scrolls, and replaying a spring every time one comes back into
-   * the window fires a wave of them mid-scroll — which is most of what made the
-   * appearance feel heavy. Only the first screenful animates.
+   * as the road scrolls, and replaying the entrance every time one comes back
+   * into the window sets off a wave of them mid-scroll. Only the first
+   * screenful animates.
    */
   animate?: boolean;
 };
@@ -67,11 +67,12 @@ export default function SkillNode({
       return;
     }
     enter.value = 0;
-    // Short, and barely bouncy. The old preset took past a second to settle,
-    // and the stagger ran to two thirds of that before the last node started.
+    // Eased, not sprung. A spring this size overshoots by about a tenth, and
+    // the overshoot was landing on the label — text scaling past its own size
+    // and settling back is what read as wobble. An ease-out arrives once.
     enter.value = withDelay(
-      90 + Math.min(index, 5) * 45,
-      withSpring(1, { damping: 17, stiffness: 300, mass: 0.7 }),
+      40 + Math.min(index, 6) * 34,
+      withTiming(1, { duration: 340, easing: Easing.out(Easing.cubic) }),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawKey]);
@@ -133,13 +134,25 @@ export default function SkillNode({
     [fire, press],
   );
 
+  // Opacity and offset only. Both are compositor work: the layer is rasterised
+  // once and then just moves. Scale is not — it re-rasterises everything inside
+  // it every frame, and inside here is a 16pt label, an XP pill and its bolt.
+  // Six nodes doing that at once, over a road drawing itself on, was the weight.
+  // The scale still happens, on the circle below, where it costs a flat fill and
+  // one small glyph.
   const groupStyle = useAnimatedStyle(() => ({
     opacity: enter.value,
     transform: [
       { translateX: shake.value * 7 },
-      { translateY: (1 - enter.value) * 14 },
-      { scale: 0.86 + enter.value * 0.14 + pop.value * 0.14 },
+      { translateY: (1 - enter.value) * 10 },
     ],
+  }));
+
+  // The circle carries both scales: the entrance, and the pop on completion.
+  // The pop used to take the label up with it; the node alone is the sharper
+  // beat, and it lands on the glyph that just changed.
+  const slotStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 0.88 + enter.value * 0.12 + pop.value * 0.14 }],
   }));
 
   // Pressing settles the face down onto its plate, which is exactly the 2px the
@@ -164,7 +177,7 @@ export default function SkillNode({
     <Animated.View style={[styles.group, { left: x, top: y }, groupStyle]} pointerEvents="box-none">
       <GestureDetector gesture={tap}>
         <View style={styles.row}>
-          <View style={styles.slot}>
+          <Animated.View style={[styles.slot, slotStyle]}>
             {status === 'current' && (
               <Animated.View style={[styles.halo, haloStyle]} pointerEvents="none" />
             )}
@@ -185,7 +198,7 @@ export default function SkillNode({
             >
               <NodeGlyph status={status} locked={locked} />
             </Animated.View>
-          </View>
+          </Animated.View>
 
           <Animated.View style={[styles.label, labelStyle]}>
             <Text

@@ -13,15 +13,25 @@ import { colors } from '../theme/tokens';
 /**
  * The sky behind the road.
  *
- * The clouds are the design's own photographic plates. The frame composites
- * them in Overlay, which matters: these are grey-white photographs on
- * transparency, and painted normally they sit on the sky as grey smudges.
+ * The clouds are the design's own plates. The frame composites them in Overlay,
+ * which matters: they are grey-white photographs on transparency, and painted
+ * normally they sit on the sky as grey smudges. `mixBlendMode` exists in React
+ * Native but react-native-web drops it, so it cannot be checked on both targets
+ * from one place.
  *
- * `mixBlendMode` exists in React Native but react-native-web drops it, so it
- * cannot be checked on both targets from one place. These are tinted instead —
- * the alpha channel is what carries a cloud's shape and softness, so tinting to
- * a pale sky-white lands close to what Overlay produces and behaves the same
- * everywhere.
+ * They are baked instead, offline, by `scripts/bake-cloud.py`: each plate's own
+ * luminance is folded into its alpha and the colour set to white. That lands
+ * where Overlay lands and behaves the same everywhere — and, unlike a runtime
+ * tint, it keeps the modelling.
+ *
+ * Tinting was the previous answer here and it only half worked, because the two
+ * kinds of plate are built oppositely. `cloud-2` and `cloud-3` are pure white
+ * with every highlight in alpha; `cloud-main` was a grey photograph over a hard
+ * matte, a fifth of it fully opaque. `tintColor` keeps alpha and discards
+ * colour, so on the first kind it changed nothing and on the second it erased
+ * the channel the cloud was drawn in, leaving a flat slab with a cut edge among
+ * its soft neighbours. Baking makes every plate the first kind, so one rule
+ * renders all of them and no tint is needed.
  *
  * The first plate is placed at the frame's own coordinates for
  * `image-from-rawpixel-id-6117623-png 3` — (229, 102) at 298 x 199, pinned to
@@ -32,9 +42,6 @@ type Props = {
   scrollY: SharedValue<number>;
   contentHeight: number;
 };
-
-/** Where Overlay lands a grey-white plate against this sky. */
-const CLOUD_TINT = '#F2F9FE';
 
 const MAIN = require('../../assets/clouds/cloud-main.png');
 const PLATES = [
@@ -73,7 +80,7 @@ export default function Backdrop({ scrollY, contentHeight }: Props) {
       {/* image-from-rawpixel-id-6117623-png 3 — (229, 102), 298 x 198.54, right-pinned. */}
       <Animated.View style={[styles.layer, { top: 102, right: -137 }, far]}>
         <Animated.View style={driftC}>
-          <Image source={MAIN} style={styles.main} tintColor={CLOUD_TINT} resizeMode="contain" />
+          <Image source={MAIN} style={styles.main} resizeMode="contain" />
         </Animated.View>
       </Animated.View>
 
@@ -93,22 +100,12 @@ export default function Backdrop({ scrollY, contentHeight }: Props) {
         <React.Fragment key={i}>
           <Animated.View style={[styles.layer, { top: 1020 + i * 1600, left: -130 }, mid]}>
             <Animated.View style={driftA}>
-              <Image
-                source={i % 2 ? MAIN : PLATES[1]}
-                style={styles.tall}
-                tintColor={CLOUD_TINT}
-                resizeMode="contain"
-              />
+              <Image source={i % 2 ? MAIN : PLATES[1]} style={styles.tall} resizeMode="contain" />
             </Animated.View>
           </Animated.View>
           <Animated.View style={[styles.layer, { top: 1740 + i * 1600, left: 200 }, near]}>
             <Animated.View style={driftB}>
-              <Image
-                source={i % 2 ? PLATES[0] : MAIN}
-                style={styles.wide}
-                tintColor={CLOUD_TINT}
-                resizeMode="contain"
-              />
+              <Image source={i % 2 ? PLATES[0] : MAIN} style={styles.wide} resizeMode="contain" />
             </Animated.View>
           </Animated.View>
         </React.Fragment>
@@ -120,7 +117,7 @@ export default function Backdrop({ scrollY, contentHeight }: Props) {
 const styles = StyleSheet.create({
   sky: { backgroundColor: colors.sky },
   layer: { position: 'absolute' },
-  main: { width: 298, height: 198.54, opacity: 0.92 },
+  main: { width: 298, height: 198.54, opacity: 0.85 },
   wide: { width: 250, height: 167, opacity: 0.85 },
   tall: { width: 280, height: 155, opacity: 0.8 },
 });
