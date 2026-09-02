@@ -323,10 +323,81 @@ So the split is:
 | Type sizes | derived from each text box's width | no, close |
 | Raster art — medal, gem, crown, avatar | redrawn as vectors | no, stand-ins |
 
+The four vectors are stand-ins for artwork the frame has and this could not
+export. To replace them, drop PNGs with transparency into `assets/home/` and
+swap the glyph for an `Image`:
+
+| file | drawn at | export at |
+| --- | --- | --- |
+| `avatar.png` | 40x40 | 120x120 |
+| `medal.png` | 60x60 | 180x180 |
+| `gem.png` | 20 and 12 | 60x60 |
+| `crown.png` | 20x20 | 60x60 |
+
 The three quest sprites are the exception: the frame uses the same artworks the
 category chips already use, so they are `require`d from `CHIP_IMAGES` rather
 than redrawn. The medal, gem and crown are new vectors on the same 24px grid as
 the other hand-drawn glyphs, and the avatar stands in for a photo.
+
+### The glass
+
+The frame's streak card, gem pill and counter are frosted, not translucent —
+they let the cloud behind them through *softened*, which a flat white at a third
+opacity cannot do. Over a cloud edge that reads as a grey wash, which is what
+the first pass looked like. `Glass` wraps `expo-blur`, which Expo Go for SDK 57
+ships natively, so it works without a dev client.
+
+Three things about it are load-bearing:
+
+- **The fill is a child layer, not the blur's `backgroundColor`.** Every tint
+  lays its own translucent colour over the blur, and that wins over the style's
+  background — so the plate came out the colour of the sky. A child paints after
+  both.
+- **It is weighted well towards white** (0.46). Blur alone takes the sky's
+  colour with it; at a third the card is a tinted window rather than glass.
+- **The sky is a `BlurTargetView`.** SDK 57's Android blur reads from one rather
+  than from whatever happens to be behind the view, so the sky's ref comes down
+  to every plate. Without it Android falls back to the flat fill.
+
+The counter pill is deliberately *not* frosted: it sits on the white sheet, and
+there is nothing behind it worth blurring.
+
+### Type is solved, not guessed
+
+The node tree gives every text layer's box width. Each string was rendered in
+Geist at a known size, measured in a browser, and the size scaled by the ratio
+to the frame's width — so the sizes in `tokens.ts` carry the frame's own width
+as a comment.
+
+That caught a real error: "Welcome Back" at 24 runs 165 wide against the frame's
+136, so the frame's is 20 and the first pass was a fifth too big. Most others
+were within a point of right. The row's body copy is set a shade *larger* than
+what exactly fills its 242, which is what truncates it at "and Sham…" the way
+the frame does.
+
+### Motion
+
+One rule for the screen — everything fades up and lifts eight points on a 70ms
+stagger down the page, and nothing scales, because scaling a band re-rasterises
+the text inside it every frame and Home is mostly text. On top of that:
+
+- Gems, the streak and the XP **count to their values** rather than appearing at
+  them, easing out so the last digits crawl.
+- The level track **fills**, and each cleared badge **stamps in as the fill
+  reaches it**. The timings are derived from the geometry rather than typed in:
+  a badge's turn is found by inverting the fill's cubic ease at its centre, so
+  the two stay in step whatever the level is.
+- The streak's struck-through days stamp in left to right, and today's dot
+  breathes.
+- The medal bobs and tilts on a long loop.
+- Clouds travel at two rates against the scroll and drift on loops of their own
+  — which is also what gives the frosted cards something worth blurring.
+- Completing a quest pops its mark, washes green through the row and **drains
+  again**, and bursts confetti from the mark itself, measured in window
+  coordinates so the burst lands on the tick rather than near it. Clearing one
+  does none of that: undo is a correction, and rewarding it teaches the wrong
+  thing. The green is a beat rather than a state, because the frame draws a
+  completed row exactly like the rest.
 
 ### Two places the frame is not followed
 

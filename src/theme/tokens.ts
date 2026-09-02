@@ -82,9 +82,16 @@ export const colors = {
   /** Streak card: a translucent plate on the sky, holding an opaque one. */
   streakPlate: 'rgba(255, 255, 255, 0.42)',
   streakInner: '#FFFFFF',
-  /** The gem pill beside the avatar, same construction as the streak plate. */
-  glassFill: 'rgba(255, 255, 255, 0.34)',
-  glassEdge: 'rgba(255, 255, 255, 0.65)',
+  /**
+   * The gem pill beside the avatar, same construction as the streak plate.
+   *
+   * Weighted well towards white. Blur alone takes the sky's colour with it, so
+   * a plate at a third opacity comes out blue rather than frosted — which is
+   * what the first pass did, and it is the difference between glass and a
+   * tinted window.
+   */
+  glassFill: 'rgba(255, 255, 255, 0.46)',
+  glassEdge: 'rgba(255, 255, 255, 0.7)',
   /** Greeting: the light line over the heavy one. */
   greeting: '#2E5C79',
   heading: '#07202F',
@@ -105,6 +112,8 @@ export const colors = {
   questBody: '#97A6B4',
   questDone: '#17618F',
   questPending: '#BCD4E6',
+  /** The pale disc the frame sets each quest sprite on. */
+  questIconPlate: 'rgba(255, 255, 255, 0.75)',
   /** Gems, the second currency beside XP. */
   gem: '#C13FE0',
   gemDark: '#8E1FA8',
@@ -245,22 +254,38 @@ export const type = {
   chip: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.32 },
   /** Tab labels in 78x13 boxes. */
   tab: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 16, letterSpacing: -0.26 },
-  /** Home. Sizes are derived from each text box's width in the node tree. */
-  greeting: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.3 },
-  welcome: { fontFamily: fonts.semiBold, fontSize: 24, lineHeight: 28, letterSpacing: -0.5 },
-  gemCount: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 21, letterSpacing: -0.3 },
-  streakLabel: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 14, letterSpacing: 0.7 },
-  streakDays: { fontFamily: fonts.bold, fontSize: 30, lineHeight: 34, letterSpacing: -1 },
-  dayLabel: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 },
-  dayNumber: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18, letterSpacing: -0.3 },
-  levelTitle: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.4 },
-  levelXp: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 16, letterSpacing: -0.2 },
-  levelStep: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 14, letterSpacing: -0.2 },
-  questHeading: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, letterSpacing: -0.4 },
-  questSub: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 16, letterSpacing: -0.2 },
-  questCount: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 },
-  questTitle: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 19, letterSpacing: -0.3 },
-  questReward: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.2 },
+  /**
+   * Home.
+   *
+   * Sizes are solved, not guessed. The node tree gives every text layer's box
+   * width; each string was rendered in Geist at a known size, measured, and the
+   * size scaled by the ratio to the frame's width. That is what caught
+   * "Welcome Back": at 24 it runs 165 wide against the frame's 136, so the
+   * frame's is 20 and the first pass was a fifth too big.
+   *
+   * The comment after each is the frame's box width for that string.
+   */
+  greeting: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.3 }, // 71
+  welcome: { fontFamily: fonts.semiBold, fontSize: 20, lineHeight: 25, letterSpacing: -0.4 }, // 136
+  gemCount: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 21, letterSpacing: -0.3 }, // 30
+  streakLabel: { fontFamily: fonts.medium, fontSize: 11.5, lineHeight: 14, letterSpacing: 0.7 }, // 110
+  streakDays: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 37, letterSpacing: -1 }, // 101
+  dayLabel: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 }, // 23
+  dayNumber: { fontFamily: fonts.semiBold, fontSize: 15.5, lineHeight: 19, letterSpacing: -0.3 }, // 16
+  levelTitle: { fontFamily: fonts.semiBold, fontSize: 18, lineHeight: 22, letterSpacing: -0.4 }, // 59
+  levelXp: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 17, letterSpacing: -0.2 }, // 66
+  /** Sized so the widest label, "150 XP", fits its 37 rather than "30 XP" does. */
+  levelStep: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 14, letterSpacing: -0.2 }, // 37
+  questHeading: { fontFamily: fonts.bold, fontSize: 17.5, lineHeight: 22, letterSpacing: -0.4 }, // 114
+  questSub: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 17, letterSpacing: -0.2 }, // 158
+  /**
+   * The row's body copy, a shade larger than what exactly fills its 242 — which
+   * is what truncates it at "and Sham…" the way the frame does.
+   */
+  questBody: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 17, letterSpacing: -0.2 }, // 242
+  questCount: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 }, // 69
+  questTitle: { fontFamily: fonts.semiBold, fontSize: 15.5, lineHeight: 19, letterSpacing: -0.3 }, // 186
+  questReward: { fontFamily: fonts.medium, fontSize: 11.5, lineHeight: 14, letterSpacing: -0.2 }, // 38
   sheetTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5 },
   button: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, letterSpacing: 0.8 },
 } as const;
