@@ -66,6 +66,52 @@ export const colors = {
 
   surface: '#FFFFFF',
   scrim: 'rgba(18, 52, 74, 0.4)',
+
+  // Home ("Home", node 23:10380) --------------------------------------------
+  /**
+   * The Figma MCP connection is capped on this account, so `get_design_context`
+   * and `get_variable_defs` both refuse and the file's own variables could not
+   * be read. Geometry below and in the components is exact — one `get_metadata`
+   * call did return, and every position and size comes from it. These colours
+   * did not: they are read off the rendered frame, and where the frame clearly
+   * reuses a colour the Skill Path screen already has, they point at it rather
+   * than restating a near-miss.
+   */
+  /** The sheet the lower two thirds of the screen sits on. */
+  sheet: '#FFFFFF',
+  /** Streak card: a translucent plate on the sky, holding an opaque one. */
+  streakPlate: 'rgba(255, 255, 255, 0.42)',
+  streakInner: '#FFFFFF',
+  /** The gem pill beside the avatar, same construction as the streak plate. */
+  glassFill: 'rgba(255, 255, 255, 0.34)',
+  glassEdge: 'rgba(255, 255, 255, 0.65)',
+  /** Greeting: the light line over the heavy one. */
+  greeting: '#2E5C79',
+  heading: '#07202F',
+  /** Week strip. */
+  dayLabel: '#8FA6B6',
+  dayLabelToday: '#0E2E42',
+  dayTick: '#DCEAF5',
+  /** Today's marker under its date. */
+  todayDot: '#2E7CB0',
+  /** Level card, built from the same green as the XP pills. */
+  levelCard: '#E4F7EF',
+  levelTrack: '#BFE9D6',
+  levelFill: '#10AB6E',
+  levelLocked: '#C8ECDA',
+  /** Quest rows and their two states. */
+  questRow: '#F2F6FB',
+  questTitle: '#0E2E42',
+  questBody: '#97A6B4',
+  questDone: '#17618F',
+  questPending: '#BCD4E6',
+  /** Gems, the second currency beside XP. */
+  gem: '#C13FE0',
+  gemDark: '#8E1FA8',
+  /** The streak medal. */
+  medal: '#F5B324',
+  medalDeep: '#E08A16',
+  medalPale: '#FFE59A',
 } as const;
 
 /** The frame the geometry below is expressed in. */
@@ -103,6 +149,38 @@ export const layout = {
   chipGapInner: 6,
   chipIcon: 20,
 
+  /**
+   * Home ("Home", node 23:10380). Every number here is off the node tree.
+   *
+   *   greeting row   350x42 at (20, 70)
+   *   streak card    350x166 at (20, 128), inner plate 330x88 at (10, 10)
+   *   week strip     330x56 at (10, 104), seven 44x56 cells 3.67 apart
+   *   sheet          390x673 at (0, 310)
+   *   level card     350x99 at (20, 20) of the sheet
+   *   quest block    350x497 at (20, 135) of the sheet
+   *   quest row      342x81, 4 apart, content 318x57 inset 12
+   */
+  homeGutter: 20,
+  streakCard: 166,
+  streakPlate: 88,
+  streakPad: 10,
+  weekStrip: 56,
+  weekCell: 44,
+  weekGap: 3.67,
+  weekTick: 20,
+  sheetTop: 310,
+  levelCard: 99,
+  levelPad: 12,
+  levelBadge: { width: 30, height: 20 },
+  levelTrackHeight: 6,
+  questRow: 81,
+  questRowTall: 90,
+  questRowGap: 4,
+  questPad: 12,
+  questIcon: 32,
+  questStatus: 24,
+  questTextLeft: 40,
+
   /** "mainContainer" — 354x61 at (18, 763), 20px above the 844 baseline. */
   tabBarInset: 18,
   tabBarHeight: 61,
@@ -137,6 +215,11 @@ export const radii = {
   pill: 999,
   sheet: 28,
   card: 18,
+  /** Home: the sheet's top corners, its cards, and a quest row. */
+  homeSheet: 32,
+  homeCard: 24,
+  homeInner: 16,
+  questRow: 16,
 } as const;
 
 /**
@@ -162,6 +245,22 @@ export const type = {
   chip: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.32 },
   /** Tab labels in 78x13 boxes. */
   tab: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 16, letterSpacing: -0.26 },
+  /** Home. Sizes are derived from each text box's width in the node tree. */
+  greeting: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.3 },
+  welcome: { fontFamily: fonts.semiBold, fontSize: 24, lineHeight: 28, letterSpacing: -0.5 },
+  gemCount: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 21, letterSpacing: -0.3 },
+  streakLabel: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 14, letterSpacing: 0.7 },
+  streakDays: { fontFamily: fonts.bold, fontSize: 30, lineHeight: 34, letterSpacing: -1 },
+  dayLabel: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 },
+  dayNumber: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18, letterSpacing: -0.3 },
+  levelTitle: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 21, letterSpacing: -0.4 },
+  levelXp: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 16, letterSpacing: -0.2 },
+  levelStep: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 14, letterSpacing: -0.2 },
+  questHeading: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, letterSpacing: -0.4 },
+  questSub: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 16, letterSpacing: -0.2 },
+  questCount: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 },
+  questTitle: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 19, letterSpacing: -0.3 },
+  questReward: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.2 },
   sheetTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5 },
   button: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, letterSpacing: 0.8 },
 } as const;

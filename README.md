@@ -142,13 +142,26 @@ Every colour, radius and road dimension lives in `src/theme/tokens.ts`.
 src/
   theme/tokens.ts      colours, Figma geometry, springs, header metrics
   data/paths.ts        the five lessons and four chips from the frame
+  data/home.ts         the streak, level and quests from the Home frame
   state/useProgress.ts persisted completion + lesson status resolution
   lib/road.ts          builds the switchback road and its arc length
   icons/Glyphs.tsx     Solar-style vector icons
   components/          Backdrop, SkillRoad, SkillNode, CategoryTabs,
                        Header, TabBar, LessonSheet, Celebration
+  components/home/     StreakCard, LevelCard, QuestRow
   screens/SkillPathScreen.tsx
+  screens/HomeScreen.tsx
 ```
+
+`App.tsx` holds the two screens the tab bar can reach. Home is built at launch;
+Skill Path is built the first time Path is pressed and kept from then on. Not
+both up front, for two reasons: Skill Path lays out a five thousand point road
+across five SVG bands and a windowed node list, which is not worth doing at
+launch for a screen behind a tab you may not press — and it opens itself on the
+lesson you are up to by scrolling on its first layout, which goes nowhere if
+that layout happens while the screen is hidden. Once built, a screen is hidden
+rather than unmounted, so coming back finds the scroll position it was left
+with.
 
 ## Motion
 
@@ -285,6 +298,52 @@ fallback is a source edit rather than a runtime check because Metro resolves
 `require` at build time: pointing at a file that is not there fails the bundle.
 
 Either way the interlude is always skippable.
+
+## Home
+
+"Home" — node `23:10380`, the second screen in the file. Three bands on the sky,
+scrolling together: the greeting, the streak card, and a sheet from y=310
+carrying the level card and the quest list.
+
+### What could be read out of Figma, and what could not
+
+The MCP connection is capped on this account. One `get_metadata` call returned
+before the cap bit; `get_design_context`, `get_variable_defs`, `get_screenshot`
+and `download_assets` all refuse. The public embed is no way round it either —
+`embed.figma.com` redirects to `www.figma.com`, which this session's egress
+policy answers with a 403.
+
+So the split is:
+
+| | source | exact? |
+| --- | --- | --- |
+| Geometry — every position, size, inset and gap | `get_metadata` | yes, transcribed |
+| Copy — every string | `get_metadata` layer names | yes |
+| Colour | read off the rendered frame | no, a reading |
+| Type sizes | derived from each text box's width | no, close |
+| Raster art — medal, gem, crown, avatar | redrawn as vectors | no, stand-ins |
+
+The three quest sprites are the exception: the frame uses the same artworks the
+category chips already use, so they are `require`d from `CHIP_IMAGES` rather
+than redrawn. The medal, gem and crown are new vectors on the same 24px grid as
+the other hand-drawn glyphs, and the avatar stands in for a photo.
+
+### Two places the frame is not followed
+
+- **"3/5 completed" is counted, not transcribed.** The frame's label says 3/5
+  while it draws checks on two of its five rows. That is a comp's placeholder
+  rather than a spec, and a number that disagrees with the marks beside it is
+  worse than one that moves, so it counts what is actually struck through — it
+  reads 2/5 on open, and 3/5 once you tick one.
+- **The level track's overshoot is kept.** The frame draws the filled segment
+  running 25px past the third badge's centre rather than stopping on it. That
+  reads as *in progress* rather than parked, so it is kept and derived from
+  `reached`, which holds it true as the level moves.
+
+Quests are tappable and the ring follows, but nothing here is persisted or wired
+to `useProgress` — that tracks lessons, not quests or streaks. `src/data/home.ts`
+is the frame's own state and the file to replace when there is a quest system
+behind it. Its last two rows repeat the first row's copy, as the frame does.
 
 ## Keeping it light
 

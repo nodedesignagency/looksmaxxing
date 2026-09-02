@@ -100,3 +100,60 @@ export type GlyphName = keyof typeof CHIP_IMAGES;
 const styles = StyleSheet.create({
   glyph: { resizeMode: 'contain' },
 });
+
+/**
+ * Home screen art.
+ *
+ * The frame draws the medal, the gem and the crown as raster images, and the
+ * MCP connection is capped on this account so `download_assets` refuses along
+ * with everything else. These are redrawn as vectors on the same 24px grid the
+ * other hand-drawn glyphs use — the shapes are simple enough to carry, and a
+ * vector stays crisp at the three sizes the screen asks for (12, 20 and 60).
+ */
+
+/** The "+2" currency beside XP, and the 235 in the header. */
+export const GemIcon = ({ size = 12 }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Table, then the two crown facets, then the pavilion. */}
+    <Path d="M6.2 4h11.6l3.7 5.1H2.5L6.2 4Z" fill="#D96BEE" />
+    <Path d="M2.5 9.1h19l-9.5 11.4L2.5 9.1Z" fill="#C13FE0" />
+    <Path d="M12 20.5 2.5 9.1h5.1L12 20.5Z" fill="#8E1FA8" opacity={0.55} />
+    <Path d="M6.2 4 7.6 9.1h8.8L17.8 4H6.2Z" fill="#EFA6FA" opacity={0.75} />
+  </Svg>
+);
+
+/** The 60x60 rosette in the streak card. */
+export const MedalIcon = ({ size = 60 }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Ribbon tails, behind the disc. */}
+    <Path d="M7.4 14.2 4.6 21l3.2-1.1L9.6 22l2.2-5.4-4.4-2.4Z" fill="#E0602F" />
+    <Path d="M16.6 14.2 19.4 21l-3.2-1.1L14.4 22l-2.2-5.4 4.4-2.4Z" fill="#F4784A" />
+    <Circle cx={12} cy={10} r={8.4} fill="#E08A16" />
+    <Circle cx={12} cy={10} r={7} fill="#F5B324" />
+    <Circle cx={12} cy={10} r={5.2} fill="#FFE59A" />
+    <Path
+      d="m12 5.9 1.5 3.05 3.36.49-2.43 2.37.57 3.35L12 13.57l-3 1.58.57-3.35L7.14 9.44l3.36-.49L12 5.9Z"
+      fill="#F5B324"
+    />
+  </Svg>
+);
+
+/** The 20x20 mark on "Level 4". */
+export const CrownIcon = ({ size = 20, color = '#10AB6E' }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Five points: two outer, two valleys, one centre, over a banded base. */}
+    <Path
+      d="M2.6 6.4 7.4 11.6 12 4.2l4.6 7.4 4.8-5.2-1.6 10H4.2l-1.6-10Z"
+      fill={color}
+    />
+    <Path d="M4.8 19.4h14.4" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
+  </Svg>
+);
+
+/** Stands in for the profile photo the frame places at 40x40. */
+export const AvatarGlyph = ({ size = 40, color = '#588AAB' }: GlyphProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx={12} cy={9} r={3.6} fill={color} />
+    <Path d="M4.6 20.4a7.4 7.4 0 0 1 14.8 0" fill={color} />
+  </Svg>
+);

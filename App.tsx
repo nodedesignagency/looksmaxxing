@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TabBar, { type TabKey } from './src/components/TabBar';
 import type { Lesson } from './src/data/paths';
+import HomeScreen from './src/screens/HomeScreen';
 import SkillPathScreen from './src/screens/SkillPathScreen';
 import { useProgress } from './src/state/useProgress';
 import { colors } from './src/theme/tokens';
@@ -43,10 +44,27 @@ function Splash() {
 
 function Shell() {
   const insets = useSafeAreaInsets();
-  // The Figma frame ships one screen. The tab bar is part of that design, so it
-  // stays and stays animated, but Path is the only destination that exists.
-  const [tab, setTab] = useState<TabKey>('path');
+  // Two of the four tabs lead somewhere. Shop and Progress are still part of the
+  // design rather than the app, so they keep their bounce and nothing else.
+  const [tab, setTab] = useState<TabKey>('home');
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  /**
+   * Which screens have been opened. A screen is built the first time it is
+   * asked for and kept from then on.
+   *
+   * Not both up front, for two reasons. Skill Path lays out a five thousand
+   * point road across five SVG bands and a windowed node list, and none of that
+   * is worth doing at launch for a screen behind a tab you may not press. And
+   * it opens itself on the lesson you are up to, which it does by scrolling on
+   * its first layout — laid out while hidden, that scroll goes nowhere and the
+   * screen opens at the top of the road instead.
+   */
+  const [seen, setSeen] = useState<TabKey[]>(['home']);
+  const show = useCallback((key: TabKey) => {
+    setSeen((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    setTab(key);
+  }, []);
   const { ready, completedByPath, completeLesson } = useProgress();
 
   const onComplete = useCallback(
@@ -58,17 +76,30 @@ function Shell() {
 
   return (
     <View style={styles.root}>
-      <SkillPathScreen
-        completedByPath={completedByPath}
-        onComplete={onComplete}
-        onSheetOpenChange={setSheetOpen}
-      />
+      {/*
+        Once built, a screen stays: hidden with `display: none` rather than
+        unmounted, so coming back finds the scroll position and the progress it
+        was left with rather than the top of it.
+      */}
+      <View style={[styles.screen, tab !== 'home' && styles.away]}>
+        <HomeScreen />
+      </View>
+      {seen.includes('path') && (
+        <View style={[styles.screen, tab !== 'path' && styles.away]}>
+          <SkillPathScreen
+            completedByPath={completedByPath}
+            onComplete={onComplete}
+            onSheetOpenChange={setSheetOpen}
+          />
+        </View>
+      )}
 
       <TabBar
         active={tab}
-        onChange={setTab}
+        onChange={show}
         bottomInset={insets.bottom}
         hidden={sheetOpen}
+        available={['home', 'path']}
       />
     </View>
   );
@@ -76,4 +107,7 @@ function Shell() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.sky },
+  // Only ever one of these is displayed, so flex gives it the whole shell.
+  screen: { flex: 1 },
+  away: { display: 'none' },
 });
