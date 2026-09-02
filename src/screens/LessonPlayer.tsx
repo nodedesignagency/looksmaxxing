@@ -21,9 +21,9 @@ import { colors, fonts, radii, springs } from '../theme/tokens';
 /**
  * The interlude between starting a lesson and the result card.
  *
- * If a clip has been dropped into `src/data/lessonClip.ts` it plays that.
- * Otherwise it runs the scene below, which is drawn rather than loaded — so the
- * flow is never broken by a missing asset, and adding one is a single edit.
+ * It plays the clip named by `src/data/lessonClip.ts`. With that set back to
+ * null it runs the scene below instead, which is drawn rather than loaded — so
+ * the flow is never broken by a missing asset.
  *
  * Either way it lasts CLIP_SECONDS, and the ring in the corner shows how much
  * of that is left. It can always be skipped.
@@ -41,8 +41,16 @@ export default function LessonPlayer({ visible, onDone }: Props) {
   const enter = useSharedValue(0);
   const elapsed = useSharedValue(0);
 
+  // Not looped: the clip runs a shade under CLIP_SECONDS, so looping would
+  // restart it for a third of a second right at the end. Holding the last frame
+  // for that long is the quieter of the two.
+  //
+  // Unmuted, and left on the default `audioMixingMode` of 'auto'. Whether iOS
+  // then sounds it with the ringer switch off is down to the audio session,
+  // which expo-video's SDK 57 API does not expose — so if it has to be audible
+  // on silent, that is a separate change and not a property of the player.
   const player = useVideoPlayer(LESSON_CLIP, (p) => {
-    p.loop = true;
+    p.loop = false;
     p.muted = false;
   });
 
@@ -82,11 +90,15 @@ export default function LessonPlayer({ visible, onDone }: Props) {
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, styles.root, shellStyle]}>
+      {/* Contained, not covered. The clip is 638x806 — nearly square — and
+          covering a 390x844 phone would crop about two fifths of its width,
+          taking the sides of the frame with it. The root is near-black, so the
+          bars above and below read as letterboxing. */}
       {LESSON_CLIP ? (
         <VideoView
           player={player}
           style={StyleSheet.absoluteFill}
-          contentFit="cover"
+          contentFit="contain"
           nativeControls={false}
         />
       ) : (

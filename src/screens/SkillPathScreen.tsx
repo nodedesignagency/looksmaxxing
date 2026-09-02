@@ -52,26 +52,13 @@ export default function SkillPathScreen({
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
-  const [activeId, setActiveId] = useState(PATHS[0].id);
   const [selected, setSelected] = useState<{ lesson: Lesson; status: LessonStatus } | null>(null);
   const [burst, setBurst] = useState(0);
   const [burstAt, setBurstAt] = useState<{ x: number; y: number } | null>(null);
   const [playing, setPlaying] = useState<Lesson | null>(null);
 
   const scrollY = useSharedValue(0);
-  const section = useSharedValue(0);
   const scroller = useAnimatedRef<Animated.ScrollView>();
-  const lastBand = useSharedValue(0);
-
-  /**
-   * Which 500px band of the scroll we are in. Every node is an absolutely
-   * positioned view with its own gesture handler and two SVGs, and all four
-   * categories together come to well over thirty of them — far too many to keep
-   * mounted at once. Only nodes near this band are rendered. The band is coarse
-   * on purpose: it re-renders roughly once per screen of travel rather than per
-   * frame.
-   */
-  const [band, setBand] = useState(0);
 
   /**
    * True once the opening entrance has played. Nodes that scroll into the mount
@@ -158,6 +145,74 @@ export default function SkillPathScreen({
   /** Where the chip row should read from: just under the header. */
   const probe = scrimHeight + 40;
 
+  /**
+   * Where the screen opens: on the lesson you are up to, rather than at the top
+   * of a road you have already walked.
+   *
+   * Every category resolves a current lesson of its own, so this takes the first
+   * in road order — the earliest one you have not finished.
+   *
+   * It lands on `probe` exactly: the same line the chip row reads the category
+   * from. That is what keeps the two agreeing. Opening lower down the screen
+   * reads better in isolation, but it leaves the tail of the previous category
+   * lying across the probe, and a screen whose lesson says Skincare while its
+   * chip says Fitness is worse than one that opens a little high.
+   */
+  const openAt = useMemo(() => {
+    const i = rows.findIndex((r) => r.status === 'current');
+    if (i < 0) return 0;
+    return Math.max(0, Math.min(rows[i].y - probe, Math.max(0, contentHeight - height)));
+  }, [rows, probe, contentHeight, height]);
+
+  /**
+   * Which section sits under the probe at that offset, resolved exactly the way
+   * onScroll resolves it, so the chip row opens on the chip the scroll would
+   * have chosen rather than on the first one.
+   */
+  const openSection = useMemo(() => {
+    const at = openAt + probe;
+    let i = 0;
+    for (let k = 0; k < starts.length; k++) {
+      if (at >= starts[k]) i = k;
+    }
+    return i;
+  }, [openAt, probe, starts]);
+
+  const [activeId, setActiveId] = useState(() => ids[openSection]);
+  const section = useSharedValue(openSection);
+
+  /**
+   * Which 500px band of the scroll we are in. Every node is an absolutely
+   * positioned view with its own gesture handler and two SVGs, and all four
+   * categories together come to well over thirty of them — far too many to keep
+   * mounted at once. Only nodes near this band are rendered. The band is coarse
+   * on purpose: it re-renders roughly once per screen of travel rather than per
+   * frame.
+   *
+   * Seeded from the opening offset rather than from zero: the nodes that belong
+   * on screen there have to be mounted for the first paint, or they arrive a
+   * frame late as a pop.
+   */
+  const [band, setBand] = useState(() => Math.floor(openAt / BAND));
+  const lastBand = useSharedValue(Math.floor(openAt / BAND));
+
+  /**
+   * Getting there. `contentOffset` places the scroll before the first paint;
+   * the jump on content size covers platforms that treat that prop as an iOS
+   * hint. Both aim at the same offset and this runs once, at mount, so whichever
+   * lands first makes the other a no-op — and neither can pull the screen out
+   * from under a scroll of your own later, however progress changes.
+   */
+  const [initialOffset] = useState(() => ({ x: 0, y: openAt }));
+  const opened = React.useRef(false);
+  const openOnce = useCallback(() => {
+    if (opened.current) return;
+    opened.current = true;
+    if (openAt <= 0) return;
+    scrollY.value = openAt;
+    scroller.current?.scrollTo({ y: openAt, animated: false });
+  }, [openAt, scroller, scrollY]);
+
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
 
@@ -239,6 +294,8 @@ export default function SkillPathScreen({
         onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        contentOffset={initialOffset}
+        onContentSizeChange={openOnce}
         contentContainerStyle={{ height: contentHeight }}
       >
         <SkillRoad

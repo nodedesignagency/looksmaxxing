@@ -181,7 +181,22 @@ src/
 
 All four categories lie end to end on one road: scrolling off the bottom of one
 carries straight into the next, and the chip row follows where you are rather
-than choosing what you see. Tapping a chip scrolls to that stretch.The first five Fitness lessons are transcribed from the frame verbatim;
+than choosing what you see. Tapping a chip scrolls to that stretch.
+
+The screen opens on the lesson you are up to rather than at the top of a road
+you have already walked — the first lesson in road order you have not finished,
+so once a category is done it carries on into the next one.
+
+It lands that lesson on `probe` exactly, the same line the chip row reads the
+category from, and that is load-bearing rather than incidental. Opening lower
+down the screen frames the lesson better on its own, but it leaves the tail of
+the previous category lying across the probe, and a screen showing a Skincare
+lesson under a Fitness chip is worse than one that opens a little high. The
+mount band and the active chip are seeded from the same offset, so the nodes
+that belong on screen there are mounted for the first paint instead of arriving
+a frame late.
+
+The first five Fitness lessons are transcribed from the frame verbatim;
 everything after them in `src/data/paths.ts` is placeholder text, there so each
 category has a road long enough to travel. Replace those entries when real
 curriculum exists — nothing else reads them.
@@ -249,15 +264,27 @@ plate, pressed down onto it. The nodes offset by 2px, a button by 4.
 
 ### The interlude clip
 
-`src/data/lessonClip.ts` holds the clip that plays during a lesson. Nothing
-ships there, so the player falls back to a scene it draws itself — a turntable,
-a level meter and notes coming off the top — and the flow works with no asset
-at all.
+`assets/lesson-clip.mp4` plays during a lesson, wired up in
+`src/data/lessonClip.ts`. It is H.264 with AAC audio — the format iOS will play,
+where it will not play WebM — 5.67 seconds long and 638x806.
 
-To use a real clip, drop it in as `assets/lesson-clip.mp4` and uncomment the
-`require` in that file. It has to be **H.264 in an .mp4**; iOS will not play
-WebM. `CLIP_SECONDS` sets how long the interlude runs, and it is always
-skippable.
+`CLIP_SECONDS` is 6 to cover that: shorter would cut the clip off mid-frame,
+longer holds on its last frame. Retime it alongside any replacement. The player
+does not loop, so the third of a second between the clip ending and the
+interlude ending is a held frame rather than a restart.
+
+It is drawn `contentFit="contain"`. The clip is nearly square, so covering a
+390x844 phone would crop about two fifths of its width and take the sides of the
+frame with it; the interlude's background is near-black, so the bars above and
+below read as letterboxing.
+
+Set `LESSON_CLIP` back to `null` (the two lines are next to each other) and the
+player falls back to a scene it draws itself — a turntable, a level meter and
+notes coming off the top — so the flow still works with no asset at all. That
+fallback is a source edit rather than a runtime check because Metro resolves
+`require` at build time: pointing at a file that is not there fails the bundle.
+
+Either way the interlude is always skippable.
 
 ## Keeping it light
 
