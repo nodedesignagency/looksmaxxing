@@ -17,7 +17,7 @@ Scan the QR code with Expo Go (iOS or Android).
 
 ```bash
 cd ~/looksmaxxing
-git fetch origin && git reset --hard origin/claude/figma-app-screen-animations-swxgjb
+git fetch origin && git reset --hard origin/claude/github-app-review-u23xue
 npm install
 npx expo start -c
 ```
@@ -356,39 +356,39 @@ it. The counter pill is not glass either: it sits on the white sheet with
 nothing behind it worth blurring.
 
 The gem pill carries Figma's Glass material: Frost 67, Light −45° at 80%,
-Refraction 32, Depth 95, Dispersion 50, Splay 48. That material is Figma's take
-on Apple's **Liquid Glass**, and on a device that has Liquid Glass the right
-answer is not to approximate it — it is to ask for it.
+Refraction 32, Depth 95, Dispersion 50, Splay 48, over a 10% white fill with no
+stroke. Everything on the rendered pill beyond that fill is the effect, so
+`Glass` builds each slider as its own layer, bottom up:
 
-`expo-glass-effect` wraps `UIGlassEffect`, Expo Go for SDK 57 ships it natively,
-and it is the same effect the design is modelled on, so it lands the refraction
-and dispersion nothing drawn by hand can. `Glass` renders a `GlassView` when
-`isLiquidGlassAvailable()` says so — `regular` rather than `clear`, since Frost
-67 is a frosted plate and `clear` is Apple's near-transparent variant for media
-overlays, and `colorScheme="light"` so it cannot flip dark under a light screen.
+| Slider | Layer |
+| --- | --- |
+| Frost 67 | `BlurView` at intensity 67, `default` tint |
+| Fill | white at 10%, as the inspector reads |
+| Light −45° 80% | a white wash from the top-left corner, gone by the middle |
+| Depth 95 / Splay 48 | a 6px soft band inside the rim, lit like the rim |
+| Dispersion 50 | a warm and a cool hairline just inside the rim |
+| Refraction 32 | the rim: a 1.5px stroke, brightest facing the light and again opposite it |
 
-Three passes went into hand-rolling this first, and all three were wrong in the
-same way — approximating an effect the platform already has:
+The rim and the band are SVG strokes with a gradient along −45°, not borders. A
+border is one colour the whole way round, and a lit edge is not — brightest
+where it faces the light, bright again opposite, fading through the sides. That
+gradient is most of what makes it read as glass rather than a chip.
 
-1. a flat white fill, which came out milky;
-2. a thinner fill with a 1px rim, which read as a drawn outline;
-3. an inset box shadow, which is the right *primitive* for a soft luminous edge
-   but renders a stray lobe at the corner on iOS.
+Apple's Liquid Glass (`expo-glass-effect`) was tried in place of all this, and on
+a light sky it is far quieter than Figma's material: the rim, which is the part
+that carries the effect, all but disappears. A Skia lens shader was tried after
+it, and could only refract what its own canvas painted, so the whole sky would
+have had to move into Skia to feed it. Both are gone; this build is the same on
+iOS, Android and web, so it can be checked on any of them.
 
-That third one survives as the fallback for Android, the web build and iOS
-before 26, where `isLiquidGlassAvailable()` is false and `GlassView` is a plain
-`View`: a blur under a thin lit face with an inset glow. Not the same thing, but
-the same read — mostly what is behind it, with a luminous edge.
+The blur's tint matters: every tint lays its own translucent white over the
+blur, and `light` lays about half — five times the pill's whole fill — which is
+what turned the earlier pill milky. `default` lays a fifth.
 
-**This cannot be checked from here.** The web build always takes the fallback,
-so every screenshot in this repo shows that path, not the real glass. The Liquid
-Glass rendering only exists on an iOS 26 device.
+Two mechanics underneath it:
 
-Two mechanics still matter on the fallback:
-
-- **The face is a child layer, not the blur's `backgroundColor`.** Every tint
-  lays its own translucent colour over the blur, and that wins over the style's
-  background — so the plate came out the colour of the sky.
+- **The fill is a sibling of the blur, not its `backgroundColor`.** The tint's
+  own colour wins over the style's background, so a fill set there is lost.
 - **The sky is a `BlurTargetView`.** SDK 57's Android blur reads from one rather
   than from whatever happens to be behind the view.
 

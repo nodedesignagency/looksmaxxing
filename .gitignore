@@ -39,8 +39,3 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-
-# CanvasKit's WASM, served from public/ so the web dev server can hand it to
-# LoadSkiaWeb. It is a byte-for-byte copy of a file in node_modules, so it is
-# fetched rather than vendored: run `npm run skia:web` before `npm run web`.
-public/canvaskit.wasm

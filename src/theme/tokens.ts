@@ -92,16 +92,26 @@ export const colors = {
   /** The 1px inside stroke on both, and on the level card. */
   cardStroke: '#ECF0F9',
   /**
-   * The gem pill. Straight off the inspector: white at 10%, and no stroke — the
-   * lit edge in the frame comes from the Glass effect, not from a border.
+   * The gem pill — Figma's Glass material, built in layers. The inspector reads
+   * white at 10% with no stroke: the lit edge comes from the Glass effect, so
+   * each of its sliders is a layer here rather than a border.
    */
+  /** The frame's own fill. */
   glassFill: 'rgba(255, 255, 255, 0.1)',
-  /**
-   * Off iOS 26 there is no Liquid Glass, and a blur alone is far weaker, so the
-   * fallback carries more white than the frame's 10% to read as a plate at all.
-   */
-  glassFillFallback: 'rgba(255, 255, 255, 0.28)',
-  glassEdge: 'rgba(255, 255, 255, 0.8)',
+  /** Light -45 degrees at 80%: a wash from the top-left corner. */
+  glassLight: 'rgba(255, 255, 255, 0.32)',
+  /** Depth 95 / Splay 48: the wide soft band the rim bleeds inward as, lit
+      like the rim — strong toward the light and opposite it, faint between. */
+  glassBand: 'rgba(255, 255, 255, 0.42)',
+  glassBandFar: 'rgba(255, 255, 255, 0.34)',
+  glassBandMid: 'rgba(255, 255, 255, 0.1)',
+  /** The rim itself, brightest where it faces the light and opposite it. */
+  glassEdge: 'rgba(255, 255, 255, 0.95)',
+  glassEdgeFar: 'rgba(255, 255, 255, 0.8)',
+  glassEdgeMid: 'rgba(255, 255, 255, 0.45)',
+  /** Dispersion 50: the faint split of colour just inside the rim. */
+  glassWarm: 'rgba(255, 170, 240, 0.16)',
+  glassCool: 'rgba(150, 235, 255, 0.16)',
   /** Greeting: both lines white on the sky, the light one a shade back. */
   greeting: 'rgba(255, 255, 255, 0.9)',
   greetingHeavy: '#FFFFFF',
