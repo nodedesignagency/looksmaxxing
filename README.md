@@ -356,61 +356,47 @@ it. The counter pill is not glass either: it sits on the white sheet with
 nothing behind it worth blurring.
 
 The gem pill carries Figma's Glass material: Frost 67, Light −45° at 80%,
-Refraction 32, Depth 95, Dispersion 50, Splay 48. Refraction and dispersion bend
-and split what is behind the plate and nothing in React Native does that; frost
-and the light do carry over, and between them they are most of the effect. So
-`Glass` is a heavy blur under a **lit** face — bright in the top-left corner the
-light comes from, falling to the opposite one — rather than the flat wash the
-first pass had, which next to the real thing reads as a sticker.
+Refraction 32, Depth 95, Dispersion 50, Splay 48. That material is Figma's take
+on Apple's **Liquid Glass**, and on a device that has Liquid Glass the right
+answer is not to approximate it — it is to ask for it.
 
-Three mechanics are load-bearing:
+`expo-glass-effect` wraps `UIGlassEffect`, Expo Go for SDK 57 ships it natively,
+and it is the same effect the design is modelled on, so it lands the refraction
+and dispersion nothing drawn by hand can. `Glass` renders a `GlassView` when
+`isLiquidGlassAvailable()` says so — `regular` rather than `clear`, since Frost
+67 is a frosted plate and `clear` is Apple's near-transparent variant for media
+overlays, and `colorScheme="light"` so it cannot flip dark under a light screen.
+
+Three passes went into hand-rolling this first, and all three were wrong in the
+same way — approximating an effect the platform already has:
+
+1. a flat white fill, which came out milky;
+2. a thinner fill with a 1px rim, which read as a drawn outline;
+3. an inset box shadow, which is the right *primitive* for a soft luminous edge
+   but renders a stray lobe at the corner on iOS.
+
+That third one survives as the fallback for Android, the web build and iOS
+before 26, where `isLiquidGlassAvailable()` is false and `GlassView` is a plain
+`View`: a blur under a thin lit face with an inset glow. Not the same thing, but
+the same read — mostly what is behind it, with a luminous edge.
+
+**This cannot be checked from here.** The web build always takes the fallback,
+so every screenshot in this repo shows that path, not the real glass. The Liquid
+Glass rendering only exists on an iOS 26 device.
+
+Two mechanics still matter on the fallback:
 
 - **The face is a child layer, not the blur's `backgroundColor`.** Every tint
   lays its own translucent colour over the blur, and that wins over the style's
   background — so the plate came out the colour of the sky.
 - **The sky is a `BlurTargetView`.** SDK 57's Android blur reads from one rather
-  than from whatever happens to be behind the view, so the sky's ref comes down
-  to the pill. Without it Android falls back to the face alone.
-- **The edge is an inset box shadow, not a border.** Depth 95 and Splay 48 give
-  the frame's pill a wide glowing band around its perimeter that fades inward.
-  A 1px rim draws a hard outline instead, and a second ring inside it only reads
-  as a double outline — which is what two passes here looked like. `boxShadow`
-  with `inset` has been in React Native since 0.76 and does the real thing: one
-  shadow all round for the band, and a second offset down-right so the top-left
-  inner edge lights up, which is where Light at −45° puts it.
-- **Strokes are inset rings, not `borderWidth`.** Figma's "Inside" stroke paints
-  over a frame without taking layout; a border in React Native eats into the
-  content box. The streak card has no slack to give — its 166 is exactly
-  10 + 88 + 6 + 56 + 6 — so a 1px border on each edge overflows it by two and
-  the week strip loses its bottom.
+  than from whatever happens to be behind the view.
 
-### The streak card came off the design context
-
-`get_design_context` returned for node `23:10572` in one window before the cap
-bit again, and it corrected several things a reading could not have got:
-
-| | read off the render | what the file says |
-| --- | --- | --- |
-| "CURRENT STREAK" | Geist Medium 11.5, `#5F86A2` | **DM Sans** Regular **14**, `#426F90` |
-| "3 Days" | Geist **Bold** 30 | Geist **Medium** 32, black |
-| Day labels | 11, `#8FA6B6` | 11, `#8B8B8B` — black on today |
-| Day numbers | 15.5 SemiBold | **16** Regular |
-| Day tick | `#DCEAF5` | `#DFECF7` |
-| Today's dot | `#2E7CB0` | `#426F90` |
-
-DM Sans is the one non-Geist face in the file, so it is loaded alongside it.
-
-It also caught a subtler one. The frame gives that text block `gap: 14`, and
-setting 14 is wrong: Figma trims those boxes to their caps
-(`text-box-trim: trim-both`), so its gap is measured ink to ink, while React
-Native lays out line boxes carrying leading above and below the glyphs. Measured
-off the render, that leading is 8.2pt across these two faces — 14 put **22.2**
-between the caps and pushed the block past the plate's 60 of content. The gap is
-the frame's 14 less that leading, which measures back at 14.2.
-
-Worth knowing generally: any `gap` or spacing figure taken from this file is
-between trimmed boxes, and needs the same treatment wherever the two lines have
-different faces or sizes.
+Strokes elsewhere on the screen are inset rings, not `borderWidth`: Figma's
+"Inside" stroke paints over a frame without taking layout, while a border in
+React Native eats into the content box. The streak card has no slack to give —
+its 166 is exactly 10 + 88 + 6 + 56 + 6 — so a 1px border on each edge overflows
+it by two and the week strip loses its bottom.
 
 ### Type is solved where the file was not readable
 
