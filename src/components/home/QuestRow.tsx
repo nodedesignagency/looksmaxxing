@@ -201,7 +201,20 @@ export default function QuestRow({
 
   // The row settles a shade rather than shrinking: scaling it would re-raster
   // the title, the body copy and two reward labels on every frame.
-  const rowStyle = useAnimatedStyle(() => ({ opacity: 1 - press.value * 0.35 }));
+  /**
+   * The press dip, and the hand-over to the dust.
+   *
+   * Both are opacity, and both have to live in this one worklet. Reanimated
+   * writes an animated style straight onto the view on the UI thread, so it
+   * wins over anything the style prop says about the same property — a static
+   * `opacity: 0` alongside this did nothing at all, and the row sat there at
+   * full strength underneath its own dust, which read as the card and a copy
+   * of it coming apart together.
+   */
+  const rowStyle = useAnimatedStyle(
+    () => ({ opacity: clearing ? 0 : 1 - press.value * 0.35 }),
+    [clearing],
+  );
 
   // The mark overshoots on the way in — it is the one moment on this screen
   // worth a bounce, since it is the only thing you actually did.
@@ -223,7 +236,7 @@ export default function QuestRow({
         <Animated.View
           ref={rowRef}
           collapsable={false}
-          style={[styles.row, rowStyle, clearing && styles.handedOver]}
+          style={[styles.row, rowStyle]}
         >
           <Animated.View style={[styles.tint, fillStyle]} pointerEvents="none" />
 
@@ -273,9 +286,6 @@ const SLOT = layout.questRow + layout.questRowGap;
 
 const styles = StyleSheet.create({
   slot: { height: SLOT, overflow: 'hidden' },
-  // Once the snapshot is up, the dust is the row. Leaving this drawn as well
-  // would show it collapsing behind its own debris.
-  handedOver: { opacity: 0 },
   row: {
     height: layout.questRow,
     borderRadius: radii.questRow,

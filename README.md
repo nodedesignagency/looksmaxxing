@@ -558,6 +558,13 @@ Two mechanics underneath it:
 - **It is wrapped in a plain `View` with `pointerEvents="none"`.** On the canvas
   alone, web keeps taking the taps and nothing in the list can be struck through
   at all.
+- **The row hides itself from inside its animated style, not the style prop.**
+  Reanimated writes an animated style straight onto the view on the UI thread,
+  so it wins over anything the style prop says about the same property. The row
+  already animates `opacity` for its press dip, so a static `opacity: 0`
+  alongside it did nothing: the row sat at full strength under its own dust, and
+  what you saw was the card and a copy of it coming apart at once. Both now
+  live in the one worklet.
 
 `QuestRow` collapses its own slot rather than being unmounted on the spot, and
 it does not start until the last speck has gone, then waits a beat longer.
