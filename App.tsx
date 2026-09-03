@@ -1,4 +1,5 @@
 // Subpath imports so Metro bundles only the four faces used, not all 18.
+import DMSans_400Regular from '@expo-google-fonts/dm-sans/400Regular/DMSans_400Regular.ttf';
 import Geist_400Regular from '@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf';
 import Geist_500Medium from '@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf';
 import Geist_600SemiBold from '@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf';
@@ -19,6 +20,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
+    // The Home frame sets "CURRENT STREAK" in DM Sans; everything else is Geist.
+    DMSans_400Regular,
     Geist_400Regular,
     Geist_500Medium,
     Geist_600SemiBold,

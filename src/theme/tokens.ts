@@ -103,19 +103,23 @@ export const colors = {
    * So: a heavy blur, and a lit face rather than a flat one — bright at the
    * top-left corner the light comes from, falling away to the opposite one.
    */
-  glassLit: 'rgba(255, 255, 255, 0.58)',
-  glassShade: 'rgba(255, 255, 255, 0.16)',
-  glassEdge: 'rgba(255, 255, 255, 0.75)',
+  glassLit: 'rgba(255, 255, 255, 0.30)',
+  glassShade: 'rgba(255, 255, 255, 0.02)',
+  glassEdge: 'rgba(255, 255, 255, 0.95)',
+  /** The bevel just inside the rim — Depth 95, in as far as it goes here. */
+  glassBevel: 'rgba(255, 255, 255, 0.35)',
   /** Greeting: both lines white on the sky, the light one a shade back. */
   greeting: 'rgba(255, 255, 255, 0.9)',
   greetingHeavy: '#FFFFFF',
   heading: '#07202F',
   /** Week strip. */
-  dayLabel: '#8FA6B6',
-  dayLabelToday: '#0E2E42',
-  dayTick: '#DCEAF5',
-  /** Today's marker under its date. */
-  todayDot: '#2E7CB0',
+  dayLabel: '#8B8B8B',
+  dayLabelToday: '#000000',
+  dayTick: '#DFECF7',
+  /** Today's marker under its date, and the "CURRENT STREAK" label. */
+  todayDot: '#426F90',
+  streakLabel: '#426F90',
+  streakDays: '#000000',
   /** Level card, built from the same green as the XP pills. */
   levelCard: '#E4F7EF',
   levelTrack: '#BFE9D6',
@@ -251,6 +255,7 @@ export const radii = {
   homeCard: 12,
   homeInner: 8,
   levelCard: 16,
+  questCard: 16,
   questRow: 16,
 } as const;
 
@@ -260,6 +265,8 @@ export const radii = {
  * custom font is loaded.
  */
 export const fonts = {
+  /** The one non-Geist face in the file: "CURRENT STREAK". */
+  dmSans: 'DMSans_400Regular',
   regular: 'Geist_400Regular',
   medium: 'Geist_500Medium',
   semiBold: 'Geist_600SemiBold',
@@ -291,10 +298,17 @@ export const type = {
   greeting: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.3 }, // 71
   welcome: { fontFamily: fonts.semiBold, fontSize: 20, lineHeight: 25, letterSpacing: -0.4 }, // 136
   gemCount: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 21, letterSpacing: -0.3 }, // 30
-  streakLabel: { fontFamily: fonts.medium, fontSize: 11.5, lineHeight: 14, letterSpacing: 0.7 }, // 110
-  streakDays: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 37, letterSpacing: -1 }, // 101
-  dayLabel: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 }, // 23
-  dayNumber: { fontFamily: fonts.semiBold, fontSize: 15.5, lineHeight: 19, letterSpacing: -0.3 }, // 16
+  /** DM Sans Regular 14, tracking -0.392, uppercase. Not Geist, and not 11.5. */
+  streakLabel: {
+    fontFamily: fonts.dmSans,
+    fontSize: 14,
+    lineHeight: 16,
+    letterSpacing: -0.392,
+  },
+  /** Geist *Medium* 32, tracking -0.32 — medium, not bold. */
+  streakDays: { fontFamily: fonts.medium, fontSize: 32, lineHeight: 36, letterSpacing: -0.32 },
+  dayLabel: { fontFamily: fonts.regular, fontSize: 11, lineHeight: 14 },
+  dayNumber: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20 },
   levelTitle: { fontFamily: fonts.semiBold, fontSize: 18, lineHeight: 22, letterSpacing: -0.4 }, // 59
   levelXp: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 17, letterSpacing: -0.2 }, // 66
   /** Sized so the widest label, "150 XP", fits its 37 rather than "30 XP" does. */

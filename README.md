@@ -319,8 +319,8 @@ So the split is:
 | --- | --- | --- |
 | Geometry — every position, size, inset and gap | `get_metadata` | yes, transcribed |
 | Copy — every string | `get_metadata` layer names | yes |
-| Colour | inspector where it was shared, else read off the render | exact where shared |
-| Type sizes | derived from each text box's width | no, close |
+| Colour | design context / inspector where it was shared, else read off the render | exact where shared |
+| Type sizes | design context where it was shared, else solved from box widths | exact where shared |
 | Raster art — medal, gem, crown, avatar | exported by hand from the file | yes |
 
 Those four could not be pulled through the capped MCP, so they were exported
@@ -377,7 +377,23 @@ Three mechanics are load-bearing:
   10 + 88 + 6 + 56 + 6 — so a 1px border on each edge overflows it by two and
   the week strip loses its bottom.
 
-### Type is solved, not guessed
+### The streak card came off the design context
+
+`get_design_context` returned for node `23:10572` in one window before the cap
+bit again, and it corrected several things a reading could not have got:
+
+| | read off the render | what the file says |
+| --- | --- | --- |
+| "CURRENT STREAK" | Geist Medium 11.5, `#5F86A2` | **DM Sans** Regular **14**, `#426F90` |
+| "3 Days" | Geist **Bold** 30 | Geist **Medium** 32, black |
+| Day labels | 11, `#8FA6B6` | 11, `#8B8B8B` — black on today |
+| Day numbers | 15.5 SemiBold | **16** Regular |
+| Day tick | `#DCEAF5` | `#DFECF7` |
+| Today's dot | `#2E7CB0` | `#426F90` |
+
+DM Sans is the one non-Geist face in the file, so it is loaded alongside it.
+
+### Type is solved where the file was not readable
 
 The node tree gives every text layer's box width. Each string was rendered in
 Geist at a known size, measured in a browser, and the size scaled by the ratio

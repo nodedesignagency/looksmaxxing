@@ -16,23 +16,23 @@ import type { StreakDay } from '../../data/home';
 import { colors, layout, radii, springs, type } from '../../theme/tokens';
 
 /**
- * "Frame 2147236231" — 350x166 at (20, 128).
+ * "Frame 2147236231" — 350x166 at (20, 128). Transcribed from the design
+ * context for node 23:10572, not from the render.
  *
- * Two plates, and neither is glass. Straight off the inspector: an opaque
- * F6FAFF card at radius 12, 10 padding on three sides and 6 under, holding a
- * white 330x88 plate at radius 8 with 14 padding — both carrying the same 1px
- * inside stroke in ECF0F9, and 6 between them. The week strip below has no fill
- * of its own and sits on the card's own F6FAFF.
+ * An opaque F6FAFF card at radius 12 — no glass anywhere on it — with a 1px
+ * inside stroke in ECF0F9, 10 padding on three sides and 6 under, holding a
+ * white plate at radius 8 with the same stroke, 14 padding and a 16 gap. The
+ * week strip below has no fill of its own and sits on the card's F6FAFF.
  *
- * It was built frosted first, from the render, and that was wrong: F6FAFF over
- * this sky *looks* like glass, and the tell is that the cloud behind it never
- * moves through it. Only the gem pill is real glass on this frame.
+ * Both strokes are inset rings rather than `borderWidth`. Figma's "Inside"
+ * stroke paints over a frame without taking layout; a border in React Native
+ * eats into the content box, and this card has no slack — 166 is exactly
+ * 10 + 88 + 6 + 56 + 6, so a border on each edge overflows it by two.
  *
- * Both strokes are drawn as inset rings rather than `borderWidth`. Figma's
- * "Inside" stroke paints over the frame without taking layout, but a border in
- * React Native eats into the content box — and this card has no slack to give:
- * 166 is exactly 10 + 88 + 6 + 56 + 6, so a 1px border on each edge overflows
- * it by two and the week strip loses its bottom.
+ * The medal is positioned, not laid out: a 176x117 raster centred on a 60x60
+ * box, which is why it reaches past that box on three sides. The plate clips
+ * it, and the artwork's own transparent padding is what keeps the sparkles
+ * inside that clip.
  */
 
 type Props = {
@@ -69,20 +69,21 @@ export default function StreakCard({ days, week }: Props) {
       <View style={styles.plate}>
         <View style={styles.plateRing} pointerEvents="none" />
 
-        {/* "Frame 2147236414" at (14, 20.5), 226 wide. */}
+        {/* "Frame 2147236414" — flex-1, its two lines 14 apart. */}
         <View style={styles.headline}>
-          <Text style={[type.streakLabel, styles.label]}>CURRENT STREAK</Text>
+          <Text style={[type.streakLabel, styles.label]}>Current Streak</Text>
           <Text style={[type.streakDays, styles.days]}>
             {shown} {days === 1 ? 'Day' : 'Days'}
           </Text>
         </View>
-        {/* "Frame 2147236459" — 60x60 at (256, 14). */}
+
+        {/* "Frame 2147236459" — a 60x60 box the raster is centred on. */}
         <Animated.View style={medalStyle}>
           <MedalIcon size={60} />
         </Animated.View>
       </View>
 
-      {/* "Frame 2147236266" — 330x56, seven 44x56 cells 3.67 apart. */}
+      {/* "Frame 2147236266" — seven 44-wide cells, spread. */}
       <View style={styles.week}>
         {week.map((day, i) => (
           <Day key={day.label} day={day} index={i} />
@@ -92,6 +93,7 @@ export default function StreakCard({ days, week }: Props) {
   );
 }
 
+/** One 44x56 cell: its label at the top, its mark at the bottom, 10 inset. */
 function Day({ day, index }: { day: StreakDay; index: number }) {
   // Struck-through days stamp themselves in, left to right, after the card has
   // arrived — so the streak reads as something that was earned in order.
@@ -131,17 +133,16 @@ function Day({ day, index }: { day: StreakDay; index: number }) {
   return (
     <View style={styles.cell}>
       <Text
-        style={[type.dayLabel, day.today ? styles.dayLabelToday : styles.dayLabel]}
+        style={[type.dayLabel, day.today ? styles.labelToday : styles.labelPast]}
         numberOfLines={1}
       >
         {day.label}
       </Text>
 
-      {/* A 20x20 mark: a struck-through day carries a check, the rest a date. */}
-      <View style={styles.tick}>
+      <View style={styles.mark}>
         {day.done ? (
-          <Animated.View style={[styles.tickDone, stampStyle]}>
-            <CheckIcon size={13.33} color={colors.inkMuted} />
+          <Animated.View style={[styles.tick, stampStyle]}>
+            <CheckIcon size={13.333} color={colors.inkMuted} />
           </Animated.View>
         ) : (
           <Text
@@ -151,15 +152,24 @@ function Day({ day, index }: { day: StreakDay; index: number }) {
             {day.date}
           </Text>
         )}
-      </View>
 
-      {/* "Frame 2147236426" — the 4x4 dot under today, and only under today. */}
-      <View style={styles.dotSlot}>
+        {/* Hung below the mark rather than stacked under it, so today's cell is
+            not a pixel taller than the six beside it. */}
         {day.today && <Animated.View style={[styles.dot, dotStyle]} />}
       </View>
     </View>
   );
 }
+
+const RING = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  borderWidth: 1,
+  borderColor: colors.cardStroke,
+} as const;
 
 const styles = StyleSheet.create({
   card: {
@@ -170,9 +180,11 @@ const styles = StyleSheet.create({
     paddingLeft: layout.streakPad,
     paddingRight: layout.streakPad,
     paddingBottom: layout.streakPadBottom,
-    // The frame's own gap between the white plate and the week strip.
     gap: layout.streakGap,
+    overflow: 'hidden',
   },
+  cardRing: { ...RING, borderRadius: radii.homeCard },
+
   plate: {
     height: layout.streakPlate,
     borderRadius: radii.homeInner,
@@ -181,51 +193,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: layout.streakInnerPad,
     gap: layout.streakInnerGap,
+    overflow: 'hidden',
   },
-  /** ECF0F9 at 1px, inside, on both plates — painted over, never in layout. */
-  cardRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: radii.homeCard,
-    borderWidth: 1,
-    borderColor: colors.cardStroke,
-  },
-  plateRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: radii.homeInner,
-    borderWidth: 1,
-    borderColor: colors.cardStroke,
-  },
-  // 226 of the plate's 302 of content; the medal takes the other 60 plus a 16
-  // gap, which is exactly what the frame's auto layout distributes.
-  headline: { flex: 1, justifyContent: 'center' },
-  label: { color: colors.inkMuted },
-  days: { color: colors.heading, marginTop: 4 },
+  plateRing: { ...RING, borderRadius: radii.homeInner },
+
+  headline: { flex: 1, alignItems: 'flex-start', gap: 14 },
+  label: { color: colors.streakLabel, textTransform: 'uppercase' },
+  days: { color: colors.streakDays },
 
   week: {
     height: layout.weekStrip,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  cell: { width: layout.weekCell, alignItems: 'center', justifyContent: 'center' },
-  dayLabel: { color: colors.dayLabel },
-  dayLabelToday: { color: colors.dayLabelToday },
-  tick: {
-    marginTop: 7,
+  cell: {
+    width: layout.weekCell,
+    height: layout.weekStrip,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  labelPast: { color: colors.dayLabel },
+  labelToday: { color: colors.dayLabelToday },
+  mark: {
     width: layout.weekTick,
     height: layout.weekTick,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tickDone: {
+  tick: {
     width: layout.weekTick,
     height: layout.weekTick,
     borderRadius: layout.weekTick / 2,
@@ -235,8 +232,12 @@ const styles = StyleSheet.create({
   },
   date: { color: colors.dayLabel },
   dateToday: { color: colors.dayLabelToday },
-  // Reserved whether or not the dot is drawn, so today's cell is not a pixel
-  // taller than the six beside it.
-  dotSlot: { height: 4, marginTop: 5, justifyContent: 'center' },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.todayDot },
+  dot: {
+    position: 'absolute',
+    bottom: -4.78,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.todayDot,
+  },
 });

@@ -150,8 +150,15 @@ export default function HomeScreen() {
             />
           </Rise>
 
-          {/* "Frame 2147236454" — 350 wide, its rows inset a further 4. */}
+          {/*
+            "Frame 2147236454" — a card in its own right, 350x497, not a bare
+            run of rows on the sheet. White on white, so the hairline is the
+            only thing that separates them, and its 4 of padding is what insets
+            every row from the level card above.
+          */}
           <View style={styles.quests}>
+            <View style={styles.questsRing} pointerEvents="none" />
+
             <Rise index={3} style={styles.questHead}>
               <View style={styles.questHeadText}>
                 <Text style={[type.questHeading, styles.questHeading]}>Today’s Quest</Text>
@@ -320,7 +327,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  gemCount: { marginLeft: 4, color: colors.heading },
+  // White, like the greeting beside it. On a plate you can see the sky through,
+  // ink is the one thing that reads as pasted on.
+  gemCount: { marginLeft: 4, color: colors.greetingHeavy },
   avatar: { marginLeft: 16 },
 
   streak: { marginHorizontal: GUTTER, marginTop: 16 },
@@ -334,12 +343,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sheet,
   },
 
-  // The quest block sits 4 in from the level card above it, per the frame.
-  quests: { marginTop: 16, marginHorizontal: 4 },
-  questHead: {
+  quests: {
+    marginTop: 16,
+    backgroundColor: colors.sheet,
+    borderRadius: radii.questCard,
+    // 4 all round bar the top, which the frame gives 16. The last row's own
+    // 4 of margin is the bottom padding, so the card does not add a second.
     paddingTop: 16,
+    paddingHorizontal: 4,
+  },
+  questsRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radii.questCard,
+    borderWidth: 1,
+    borderColor: colors.cardStroke,
+  },
+  // "Frame 2147236414" — 342x43, its content 12 in from the card's own 4.
+  questHead: {
+    height: 43,
     paddingHorizontal: 12,
-    paddingBottom: 4,
+    marginBottom: 4,
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',

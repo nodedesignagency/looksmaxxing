@@ -15,8 +15,13 @@ import { colors } from '../../theme/tokens';
  *
  * So the plate is a heavy blur under a *lit* face rather than a flat wash:
  * bright in the top-left corner the light comes from, falling away to the
- * opposite one, with a brighter rim around it. A flat fill is what the first
- * pass had, and next to the real thing it reads as a sticker.
+ * opposite one, with a bright rim and a bevel just inside it.
+ *
+ * The face is deliberately thin — 30% of white at its brightest, 2% at its
+ * dimmest. Glass is mostly the thing behind it: in the frame you read the cloud
+ * straight through the pill, and what makes it glass rather than a hole is the
+ * rim, not the fill. Two passes at this were milky and opaque for exactly that
+ * reason, weighting the fill instead of the edge.
  *
  * Three mechanics are load-bearing:
  *
@@ -58,6 +63,9 @@ export default function Glass({ children, style, target, intensity = 66, radius 
         style={[styles.face, { borderRadius: radius }]}
         pointerEvents="none"
       />
+      {/* Depth: a softer ring inside the hard one, so the edge has thickness
+          rather than being a drawn outline. */}
+      <View style={[styles.bevel, { borderRadius: radius - 1 }]} pointerEvents="none" />
       <View style={[styles.rim, { borderRadius: radius }]} pointerEvents="none" />
       {children}
     </BlurView>
@@ -78,5 +86,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderWidth: 1,
     borderColor: colors.glassEdge,
+  },
+  bevel: {
+    position: 'absolute',
+    top: 1,
+    left: 1,
+    right: 1,
+    bottom: 1,
+    borderWidth: 1.5,
+    borderColor: colors.glassBevel,
   },
 });
