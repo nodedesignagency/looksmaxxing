@@ -55,6 +55,11 @@ float sdRRect(float2 p, float2 b, float r) {
   return min(max(q.x, q.y), 0.0) + length(max(q, float2(0.0))) - r;
 }
 
+// 1 on the rim, 0 once 'edge' inside: the bright line.
+float rimLine(float d, float edge) {
+  return 1.0 - smoothstep(0.0, edge, -d);
+}
+
 // What is behind the plate at a point: the plates over the gradient,
 // source-over in premultiplied colour, the way the sky paints them.
 half4 backdrop(float2 uv) {
@@ -102,17 +107,20 @@ half4 main(float2 xy) {
   // The frame's fill.
   col.rgb = mix(col.rgb, half3(1.0), half(fill));
 
-  // Lighting. The edge facing the light is brightest, the edge opposite it
-  // catches the light through the glass and is nearly as bright, and the
-  // sides between them fall away. A thin line sits on the rim itself, and a
-  // softer glow follows the bent band inward.
+  // Lighting, the way the frame renders it. Light comes in through the edge
+  // that faces it and leaves through the edge opposite. On the lit side that
+  // is a crisp bright line on the rim with the band just inside it darkened,
+  // the bevel turning away from the eye; on the far side the band glows, the
+  // light coming back out through the glass. The sides between carry the
+  // line faintly and little else. The interior is left alone.
   float facing = max(dot(n, light), 0.0);
   float away = max(-dot(n, light), 0.0);
-  float w = 0.3 + 0.7 * facing + 0.6 * away;
-  float rim = 1.0 - smoothstep(0.0, edge, -d);
-  float glow = k * (1.0 - rim);
-  float lit = (rim * 0.9 + glow * 0.22) * w * lightAmt;
-  col.rgb = col.rgb + half3(half(lit));
+  float band = k * (1.0 - rimLine(d, edge));
+  float line = rimLine(d, edge) * (0.35 + 0.65 * pow(facing, 1.5) + 0.5 * away);
+  float dark = band * pow(facing, 1.2) * 0.2;
+  float glow = band * pow(away, 1.2) * 0.55;
+  col.rgb = col.rgb * (1.0 - half(dark * lightAmt));
+  col.rgb = col.rgb + half3(half((glow + line) * lightAmt));
 
   // Fade by blending back toward the untouched backdrop.
   col.rgb = mix(backdrop(xy).rgb, col.rgb, half(amount));
@@ -130,7 +138,7 @@ half4 main(float2 xy) {
  */
 export const FIGMA_GLASS = {
   /** Frost 67: blur sigma, in pt. Baked into the plates; see scripts/frost-cloud.js. */
-  blur: 6,
+  blur: 3.5,
   /** Refraction 32: pt the sample is displaced at the rim. */
   refraction: 10,
   /** Depth 95: pt the band reaches in from the edge. */
@@ -140,11 +148,11 @@ export const FIGMA_GLASS = {
   /** Dispersion 50: pt. */
   dispersion: 2,
   /** The bright line on the rim, in pt. */
-  edge: 0.6,
+  edge: 1.0,
   /** Light -45 degrees: from the top-left. */
   light: [-0.7071, -0.7071] as [number, number],
   /** 80%. */
   lightAmt: 0.8,
-  /** The frame's own fill: white at 10%. */
-  fill: 0.1,
+  /** The frame's own fill: white at 10%, plus the little the frost lightens it. */
+  fill: 0.13,
 };
