@@ -98,7 +98,8 @@ export const colors = {
   /** Greeting: both lines white on the sky, the light one a shade back. */
   greeting: 'rgba(255, 255, 255, 0.9)',
   greetingHeavy: '#FFFFFF',
-  heading: '#07202F',
+  /** Headings, off the inspector: plain black, not a navy. */
+  heading: '#000000',
   /** Week strip. */
   dayLabel: '#8B8B8B',
   dayLabelToday: '#000000',
@@ -111,10 +112,13 @@ export const colors = {
   levelCard: '#E4F7EF',
   levelTrack: '#BFE9D6',
   levelFill: '#10AB6E',
+  /** "95/120 XP" is a muted green ink, not the bright green of its bolt. */
+  levelXpInk: '#3B5E51',
   levelLocked: '#C8ECDA',
   /** Quest rows and their two states. */
   questRow: '#F2F6FB',
-  questTitle: '#0E2E42',
+  /** Row titles, off the inspector: plain black. */
+  questTitle: '#000000',
   questBody: '#97A6B4',
   questDone: '#17618F',
   questPending: '#BCD4E6',
@@ -274,13 +278,20 @@ export const type = {
   /**
    * Home.
    *
-   * Sizes are solved, not guessed. The node tree gives every text layer's box
-   * width; each string was rendered in Geist at a known size, measured, and the
-   * size scaled by the ratio to the frame's width. That is what caught
-   * "Welcome Back": at 24 it runs 165 wide against the frame's 136, so the
-   * frame's is 20 and the first pass was a fifth too big.
+   * Four of these are read straight off the inspector, and are marked so. The
+   * rest are solved: the node tree gives every text layer's box width, so each
+   * string was rendered in Geist at a known size, measured, and the size scaled
+   * by the ratio to the frame's width. That is what caught "Welcome Back": at
+   * 24 it runs 165 wide against the frame's 136, so the frame's is 20 and the
+   * first pass was a fifth too big.
    *
    * The comment after each is the frame's box width for that string.
+   *
+   * Solving recovers a size but not a weight, and the two trade off: a heavier
+   * face is wider, so guessing SemiBold where the frame has Medium solves to a
+   * size a little too small. Every inspector reading so far has come back
+   * Medium and a half-point to a point larger, which is exactly that error —
+   * so treat the remaining solved weights as the least certain thing here.
    */
   greeting: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20, letterSpacing: -0.3 }, // 71
   welcome: { fontFamily: fonts.semiBold, fontSize: 20, lineHeight: 25, letterSpacing: -0.4 }, // 136
@@ -296,11 +307,14 @@ export const type = {
   streakDays: { fontFamily: fonts.medium, fontSize: 32, lineHeight: 36, letterSpacing: -0.32 },
   dayLabel: { fontFamily: fonts.regular, fontSize: 11, lineHeight: 14 },
   dayNumber: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 20 },
-  levelTitle: { fontFamily: fonts.semiBold, fontSize: 18, lineHeight: 22, letterSpacing: -0.4 }, // 59
-  levelXp: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 17, letterSpacing: -0.2 }, // 66
+  /** Inspector: Geist Medium 18, tracking -2%, #000000. */
+  levelTitle: { fontFamily: fonts.medium, fontSize: 18, lineHeight: 22, letterSpacing: -0.36 }, // 59
+  /** Inspector: Geist Regular 14, tracking -2.8%, #3B5E51. */
+  levelXp: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 17, letterSpacing: -0.392 }, // 66
   /** Sized so the widest label, "150 XP", fits its 37 rather than "30 XP" does. */
   levelStep: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 14, letterSpacing: -0.2 }, // 37
-  questHeading: { fontFamily: fonts.bold, fontSize: 17.5, lineHeight: 22, letterSpacing: -0.4 }, // 114
+  /** Inspector: Geist Medium 18, tracking -2%, #000000. Not Bold 17.5. */
+  questHeading: { fontFamily: fonts.medium, fontSize: 18, lineHeight: 22, letterSpacing: -0.36 }, // 114
   questSub: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 17, letterSpacing: -0.2 }, // 158
   /**
    * The row's body copy, a shade larger than what exactly fills its 242 — which
@@ -308,7 +322,8 @@ export const type = {
    */
   questBody: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 17, letterSpacing: -0.2 }, // 242
   questCount: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 13, letterSpacing: -0.1 }, // 69
-  questTitle: { fontFamily: fonts.semiBold, fontSize: 15.5, lineHeight: 19, letterSpacing: -0.3 }, // 186
+  /** Inspector: Geist Medium 16, tracking -2%, #000000. */
+  questTitle: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 20, letterSpacing: -0.32 }, // 186
   questReward: { fontFamily: fonts.medium, fontSize: 11.5, lineHeight: 14, letterSpacing: -0.2 }, // 38
   sheetTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5 },
   button: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, letterSpacing: 0.8 },

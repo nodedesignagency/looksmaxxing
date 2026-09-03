@@ -257,9 +257,23 @@ export default function HomeScreen() {
 
 const GLASS = Skia.RuntimeEffect.Make(GLASS_SKSL);
 
-/** The two plates: their boxes (fitted with `contain`), opacity, and motion. */
-const CLOUD_MAIN = { y: 30, w: 360, h: 240, opacity: 0.95, drift: 10, rate: 0.14 };
-const CLOUD_LEFT = { x: -130, y: 330, w: 300, h: 200, opacity: 0.8, drift: 14, rate: 0.3 };
+/**
+ * The two plates: their boxes (fitted with `contain`), opacity, and motion.
+ *
+ * Only the top of this screen is sky. The streak card covers 128-294 bar a 20
+ * gutter each side, and the sheet covers everything from 310 down, so a plate
+ * is seen through four gaps: the band above the card, the two gutters, the 16
+ * between card and sheet, and the sheet's own 32 corners.
+ *
+ * The big plate is placed to cross that lower run rather than sit above it, so
+ * it reads as one cloud passing behind the cards — caught in the gutters, the
+ * gap and the corners at once. It was at y=30 before, entirely in the top
+ * band; the second plate was at y=330, entirely under the sheet and so never
+ * visible at all. That one now sits over the greeting row, which is both where
+ * the frame draws cloud and what the gem pill's glass has to bend.
+ */
+const CLOUD_MAIN = { y: 168, w: 400, h: 260, opacity: 0.95, drift: 10, rate: 0.14 };
+const CLOUD_LEFT = { x: 40, y: -34, w: 300, h: 200, opacity: 0.8, drift: 14, rate: 0.06 };
 
 type Frame = { x: number; y: number; w: number; h: number };
 
@@ -282,8 +296,8 @@ function Sky({
 
   const driftA = useDrift(13000);
   const driftB = useDrift(17000);
-  // Right -120 puts the box's right edge 120 past the screen's.
-  const mainX = width + 120 - CLOUD_MAIN.w;
+  // Centred, near enough: the band it crosses is the full width of the screen.
+  const mainX = width + 30 - CLOUD_MAIN.w;
 
   // Where each plate is right now — drawn from these, and read by the lens
   // from the same, so the glass bends the cloud that is actually behind it.

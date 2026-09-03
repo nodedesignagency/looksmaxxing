@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   title: { marginLeft: 4, color: colors.heading },
   xpRow: { flexDirection: 'row', alignItems: 'center' },
-  xp: { marginLeft: 4, color: colors.levelFill },
+  xp: { marginLeft: 4, color: colors.levelXpInk },
 
   progress: { height: 39 },
   // The badges are the row; the two track bars sit behind them, inset by half a
