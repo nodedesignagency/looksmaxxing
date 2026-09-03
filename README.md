@@ -371,6 +371,13 @@ Three mechanics are load-bearing:
 - **The sky is a `BlurTargetView`.** SDK 57's Android blur reads from one rather
   than from whatever happens to be behind the view, so the sky's ref comes down
   to the pill. Without it Android falls back to the face alone.
+- **The edge is an inset box shadow, not a border.** Depth 95 and Splay 48 give
+  the frame's pill a wide glowing band around its perimeter that fades inward.
+  A 1px rim draws a hard outline instead, and a second ring inside it only reads
+  as a double outline — which is what two passes here looked like. `boxShadow`
+  with `inset` has been in React Native since 0.76 and does the real thing: one
+  shadow all round for the band, and a second offset down-right so the top-left
+  inner edge lights up, which is where Light at −45° puts it.
 - **Strokes are inset rings, not `borderWidth`.** Figma's "Inside" stroke paints
   over a frame without taking layout; a border in React Native eats into the
   content box. The streak card has no slack to give — its 166 is exactly
@@ -392,6 +399,18 @@ bit again, and it corrected several things a reading could not have got:
 | Today's dot | `#2E7CB0` | `#426F90` |
 
 DM Sans is the one non-Geist face in the file, so it is loaded alongside it.
+
+It also caught a subtler one. The frame gives that text block `gap: 14`, and
+setting 14 is wrong: Figma trims those boxes to their caps
+(`text-box-trim: trim-both`), so its gap is measured ink to ink, while React
+Native lays out line boxes carrying leading above and below the glyphs. Measured
+off the render, that leading is 8.2pt across these two faces — 14 put **22.2**
+between the caps and pushed the block past the plate's 60 of content. The gap is
+the frame's 14 less that leading, which measures back at 14.2.
+
+Worth knowing generally: any `gap` or spacing figure taken from this file is
+between trimmed boxes, and needs the same treatment wherever the two lines have
+different faces or sizes.
 
 ### Type is solved where the file was not readable
 

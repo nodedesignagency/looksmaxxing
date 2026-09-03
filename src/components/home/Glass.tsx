@@ -13,15 +13,20 @@ import { colors } from '../../theme/tokens';
  * nothing in React Native does that. Frost and the light do carry over, and
  * between them they are most of what the effect looks like.
  *
- * So the plate is a heavy blur under a *lit* face rather than a flat wash:
- * bright in the top-left corner the light comes from, falling away to the
- * opposite one, with a bright rim and a bevel just inside it.
+ * So the plate is a heavy blur, a very thin face, and — the part that actually
+ * carries it — a soft luminous edge.
  *
- * The face is deliberately thin — 30% of white at its brightest, 2% at its
- * dimmest. Glass is mostly the thing behind it: in the frame you read the cloud
- * straight through the pill, and what makes it glass rather than a hole is the
- * rim, not the fill. Two passes at this were milky and opaque for exactly that
- * reason, weighting the fill instead of the edge.
+ * That edge is an **inset box shadow**, not a border. Depth 95 and Splay 48
+ * give the frame's pill a wide glowing band around its perimeter that fades
+ * inward; a 1px rim draws a hard outline instead, and stacking a second ring
+ * inside it only reads as a double outline. `boxShadow` with `inset` is in
+ * React Native from 0.76 and does the real thing: one shadow all round for the
+ * band, and a second offset down-right so the top-left inner edge lights up,
+ * which is where Light at -45 degrees puts it.
+ *
+ * The face stays thin on purpose. Glass is mostly the thing behind it — in the
+ * frame you read the cloud straight through the pill — so weighting the fill is
+ * what made two earlier passes milky and opaque.
  *
  * Three mechanics are load-bearing:
  *
@@ -63,10 +68,8 @@ export default function Glass({ children, style, target, intensity = 66, radius 
         style={[styles.face, { borderRadius: radius }]}
         pointerEvents="none"
       />
-      {/* Depth: a softer ring inside the hard one, so the edge has thickness
-          rather than being a drawn outline. */}
-      <View style={[styles.bevel, { borderRadius: radius - 1 }]} pointerEvents="none" />
-      <View style={[styles.rim, { borderRadius: radius }]} pointerEvents="none" />
+      {/* The edge: a wide inner glow, plus a hairline so it still has a limit. */}
+      <View style={[styles.edge, { borderRadius: radius }]} pointerEvents="none" />
       {children}
     </BlurView>
   );
@@ -78,7 +81,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   face: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  rim: {
+  edge: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -86,14 +89,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderWidth: 1,
     borderColor: colors.glassEdge,
-  },
-  bevel: {
-    position: 'absolute',
-    top: 1,
-    left: 1,
-    right: 1,
-    bottom: 1,
-    borderWidth: 1.5,
-    borderColor: colors.glassBevel,
+    // Written as a string rather than the array form: react-native-web takes
+    // CSS here, and both targets accept it.
+    boxShadow:
+      'inset 0 0 10px rgba(255,255,255,0.7), inset 2px 2px 8px rgba(255,255,255,0.65)',
   },
 });

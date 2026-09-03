@@ -197,7 +197,17 @@ const styles = StyleSheet.create({
   },
   plateRing: { ...RING, borderRadius: radii.homeInner },
 
-  headline: { flex: 1, alignItems: 'flex-start', gap: 14 },
+  /**
+   * The frame's gap here is 14, and setting 14 is wrong.
+   *
+   * Figma trims these two text boxes to their caps (`text-box-trim: trim-both`),
+   * so its gap is measured ink to ink. React Native lays out line boxes, which
+   * carry leading above and below the glyphs — 8.2pt of it across these two
+   * faces, measured off the render. Setting 14 here put 22.2 between the caps
+   * and pushed the block past the plate's 60 of content. The gap is the frame's
+   * 14 less that leading.
+   */
+  headline: { flex: 1, alignItems: 'flex-start', gap: 14 - 8.2 },
   label: { color: colors.streakLabel, textTransform: 'uppercase' },
   days: { color: colors.streakDays },
 

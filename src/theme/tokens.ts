@@ -103,11 +103,9 @@ export const colors = {
    * So: a heavy blur, and a lit face rather than a flat one — bright at the
    * top-left corner the light comes from, falling away to the opposite one.
    */
-  glassLit: 'rgba(255, 255, 255, 0.30)',
-  glassShade: 'rgba(255, 255, 255, 0.02)',
-  glassEdge: 'rgba(255, 255, 255, 0.95)',
-  /** The bevel just inside the rim — Depth 95, in as far as it goes here. */
-  glassBevel: 'rgba(255, 255, 255, 0.35)',
+  glassLit: 'rgba(255, 255, 255, 0.20)',
+  glassShade: 'rgba(255, 255, 255, 0)',
+  glassEdge: 'rgba(255, 255, 255, 0.8)',
   /** Greeting: both lines white on the sky, the light one a shade back. */
   greeting: 'rgba(255, 255, 255, 0.9)',
   greetingHeavy: '#FFFFFF',
