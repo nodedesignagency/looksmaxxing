@@ -13,6 +13,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { DUST } from './dustShader';
 import { BoltIcon, CHIP_IMAGES, CheckIcon, GemIcon } from '../../icons/Glyphs';
 import type { Quest } from '../../data/home';
 import { colors, layout, radii, springs, type } from '../../theme/tokens';
@@ -41,9 +42,19 @@ import { colors, layout, radii, springs, type } from '../../theme/tokens';
 
 /** How long the mark takes to land, and so how long until the snapshot. */
 const MARK_MS = 260;
-/** The slot holds still for a beat before closing, so the dust leads. */
-const CLOSE_DELAY = 150;
-const CLOSE_MS = 340;
+
+/**
+ * The slot does not start closing until the dust has fully settled, and then
+ * waits a beat longer.
+ *
+ * Closing it while the specks are still flying puts two motions on top of each
+ * other in the same place: the row you are watching come apart, and the whole
+ * list sliding up through it. Neither reads. Held back, the beats separate —
+ * the card turns to dust, the gap it left sits open for a moment, and only
+ * then does the list close over it.
+ */
+const CLOSE_DELAY = DUST.duration + DUST.hold;
+const CLOSE_MS = DUST.close;
 
 type Props = {
   quest: Quest;
@@ -58,9 +69,18 @@ type Props = {
     base64: string | null,
     frame: { x: number; y: number; width: number; height: number },
   ) => void;
+  /** The gap has closed, so the row can leave the list. */
+  onClosed: (id: string) => void;
 };
 
-export default function QuestRow({ quest, done, clearing, onTick, onDust }: Props) {
+export default function QuestRow({
+  quest,
+  done,
+  clearing,
+  onTick,
+  onDust,
+  onClosed,
+}: Props) {
   const press = useSharedValue(0);
   const mark = useSharedValue(done ? 1 : 0);
   const flash = useSharedValue(0);
@@ -141,15 +161,23 @@ export default function QuestRow({ quest, done, clearing, onTick, onDust }: Prop
     };
   }, [done, clearing, onDust, quest.id]);
 
-  /** The slot closes once the dust is up, and the rows below come with it. */
+  /**
+   * The slot closes once the dust has settled, and the rows below come with it.
+   * The row leaves the list when that finishes rather than when the dust does,
+   * so nothing snaps shut under the specks.
+   */
   const close = useSharedValue(0);
   React.useEffect(() => {
     if (!clearing) return;
+    const id = quest.id;
     close.value = withDelay(
       CLOSE_DELAY,
-      withTiming(1, { duration: CLOSE_MS, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: CLOSE_MS, easing: Easing.inOut(Easing.cubic) }, (finished) => {
+        'worklet';
+        if (finished) runOnJS(onClosed)(id);
+      }),
     );
-  }, [clearing, close]);
+  }, [clearing, close, onClosed, quest.id]);
 
   const slotStyle = useAnimatedStyle(() => ({
     height: (1 - close.value) * SLOT,

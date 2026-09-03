@@ -131,9 +131,15 @@ export default function HomeScreen() {
     [],
   );
 
-  /** The dust has settled, so the row can leave the list. */
-  const settle = useCallback((id: string) => {
-    setDust(null);
+  /**
+   * The dust has settled. The specks stop being drawn, but the row keeps its
+   * place: the gap it left stays open for a beat, and the row itself only
+   * leaves the list once that gap has closed.
+   */
+  const settle = useCallback(() => setDust(null), []);
+
+  /** The gap has closed. */
+  const close = useCallback((id: string) => {
     setCleared((prev) => (prev.includes(id) ? prev : [...prev, id]));
   }, []);
 
@@ -264,6 +270,7 @@ export default function HomeScreen() {
                   clearing={clearing === quest.id}
                   onTick={tick}
                   onDust={startDust}
+                  onClosed={close}
                 />
               </Rise>
             ))}

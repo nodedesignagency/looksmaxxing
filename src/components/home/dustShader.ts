@@ -93,7 +93,15 @@ export const DUST = {
   /** How far the furthest speck travels. */
   travel: 112,
   /** How much of the flight the front takes to cross the row. */
-  spread: 0.42,
-  /** Milliseconds, start to gone. */
-  duration: 820,
+  spread: 0.46,
+  /**
+   * Milliseconds, start to gone. Slow enough to watch: the front takes most
+   * of a second to cross the row on its own, and the last specks are still in
+   * the air well after it has passed.
+   */
+  duration: 1300,
+  /** How long the gap sits open after the last speck before the list closes it. */
+  hold: 220,
+  /** And how long the closing itself takes. */
+  close: 420,
 };

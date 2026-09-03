@@ -559,9 +559,17 @@ Two mechanics underneath it:
   alone, web keeps taking the taps and nothing in the list can be struck through
   at all.
 
-`QuestRow` collapses its own slot rather than being unmounted on the spot, so
-the list closes over it while its dust is still in the air. A row that will not
-snapshot skips straight to gone: the dust is the flourish, not the mechanism.
+`QuestRow` collapses its own slot rather than being unmounted on the spot, and
+it does not start until the last speck has gone, then waits a beat longer.
+Closing it under the dust puts two motions on top of each other in the same
+place — the card coming apart, and the whole list sliding up through it — and
+neither reads. Held back, the beats separate: the card turns to dust, the gap it
+left sits open for a moment, and only then does the list close over it. The row
+leaves the list when that gap finishes closing, not when the dust settles.
+
+The three durations are all in `DUST` in `dustShader.ts`, so the whole sequence
+retimes from one place. A row that will not snapshot skips straight to gone: the
+dust is the flourish, not the mechanism.
 
 ## Node states
 

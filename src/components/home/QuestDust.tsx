@@ -29,8 +29,10 @@ import { DUST, DUST_SKSL } from './dustShader';
  * free to collapse underneath while its dust hangs in the air; it cannot both
  * be the thing coming apart and the thing making room.
  *
- * The frame is in window coordinates, so it does not move with the list. The
- * flight is under a second, which is shorter than it takes to start a scroll.
+ * The frame is in window coordinates, so it does not move with the list, and
+ * the list holds still until the last speck has gone — see `QuestRow`. The two
+ * are the same rule from either end: the dust and the gap closing are separate
+ * beats, and overlapping them means neither is legible.
  *
  * The canvas is always mounted and simply draws nothing between flights. It is
  * not there to save a mount: a Skia canvas sizes its surface from its first
@@ -61,18 +63,19 @@ export default function QuestDust({
   onSettled,
 }: {
   dust: Dust | null;
-  /** The dust has cleared, so the row can leave the list for good. */
-  onSettled: (id: string) => void;
+  /** The last speck has gone. The row keeps its place; only the dust stops. */
+  onSettled: () => void;
 }) {
   const t = useSharedValue(0);
 
   React.useEffect(() => {
     if (!dust) return;
-    const { id } = dust;
     t.value = 0;
+    // Linear, deliberately. The front crosses the row at a constant rate, and
+    // easing that is what would make it read as a snap rather than a drift.
     t.value = withTiming(1, { duration: DUST.duration, easing: Easing.linear }, (finished) => {
       'worklet';
-      if (finished) runOnJS(onSettled)(id);
+      if (finished) runOnJS(onSettled)();
     });
   }, [dust, onSettled, t]);
 
