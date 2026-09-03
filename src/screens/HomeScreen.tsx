@@ -30,6 +30,7 @@ import Animated, {
 import Svg, { Circle } from 'react-native-svg';
 import Celebration from '../components/Celebration';
 import Glass from '../components/home/Glass';
+import QuestDust, { dustImage, type Dust } from '../components/home/QuestDust';
 import { FIGMA_GLASS, GLASS_SKSL } from '../components/home/glassShader';
 import LevelCard from '../components/home/LevelCard';
 import QuestRow from '../components/home/QuestRow';
@@ -79,7 +80,13 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
+  /** Struck through — including the one currently blowing away. */
   const [done, setDone] = useState<string[]>(SEED_DONE);
+  /** Gone from the list for good. */
+  const [cleared, setCleared] = useState<string[]>([]);
+  /** The row in the air, and the snapshot it is made of. */
+  const [dust, setDust] = useState<Dust | null>(null);
+  const [clearing, setClearing] = useState<string | null>(null);
   const [burst, setBurst] = useState(0);
   const [burstAt, setBurstAt] = useState<{ x: number; y: number } | null>(null);
 
@@ -88,13 +95,12 @@ export default function HomeScreen() {
     scrollY.value = e.contentOffset.y;
   });
 
-  /**
-   * Striking a quest through fires confetti from its own mark; clearing one
-   * does not. Undo is a correction, and rewarding it teaches the wrong thing.
+/**
+   * Striking a quest through: the mark stamps in and confetti comes off it.
    */
-  const toggle = useCallback((id: string, at: { x: number; y: number }) => {
+  const tick = useCallback((id: string, at: { x: number; y: number }) => {
     setDone((prev) => {
-      if (prev.includes(id)) return prev.filter((q) => q !== id);
+      if (prev.includes(id)) return prev;
       setBurstAt(at);
       setBurst((n) => n + 1);
       return [...prev, id];
@@ -102,11 +108,43 @@ export default function HomeScreen() {
   }, []);
 
   /**
+   * The row has taken its own picture. Put it in the air and let its slot
+   * close underneath.
+   *
+   * A row that could not be snapshotted skips straight to gone rather than
+   * hanging about: the dust is the flourish, not the mechanism.
+   */
+  const startDust = useCallback(
+    (
+      id: string,
+      base64: string | null,
+      frame: { x: number; y: number; width: number; height: number },
+    ) => {
+      const image = base64 ? dustImage(base64) : null;
+      setClearing(id);
+      if (!image) {
+        setCleared((prev) => (prev.includes(id) ? prev : [...prev, id]));
+        return;
+      }
+      setDust({ id, image, frame });
+    },
+    [],
+  );
+
+  /** The dust has settled, so the row can leave the list. */
+  const settle = useCallback((id: string) => {
+    setDust(null);
+    setCleared((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  }, []);
+
+  const visible = useMemo(() => QUESTS.filter((q) => !cleared.includes(q.id)), [cleared]);
+
+  /**
    * "3/5 completed".
    *
-   * Counted, not transcribed. The frame's label reads 3/5 while it draws checks
-   * on two of the five rows — a comp's placeholder rather than a spec — and a
-   * number that disagrees with the marks beside it is worse than one that moves.
+   * Counted, not transcribed: the frame's label is a comp's placeholder. It
+   * counts what has been struck through rather than what is still on screen,
+   * since a cleared quest leaves the list and the tally has to keep it.
    */
   const completed = useMemo(() => QUESTS.filter((q) => done.includes(q.id)).length, [done]);
 
@@ -218,16 +256,33 @@ export default function HomeScreen() {
               </View>
             </Rise>
 
-            {QUESTS.map((quest, i) => (
+            {visible.map((quest, i) => (
               <Rise key={quest.id} index={4 + i}>
-                <QuestRow quest={quest} done={done.includes(quest.id)} onToggle={toggle} />
+                <QuestRow
+                  quest={quest}
+                  done={done.includes(quest.id)}
+                  clearing={clearing === quest.id}
+                  onTick={tick}
+                  onDust={startDust}
+                />
               </Rise>
             ))}
+
+            {/* The list empties as it is worked through, and an empty card with
+                a heading on it reads as broken rather than finished. */}
+            {visible.length === 0 && (
+              <Rise index={4}>
+                <Text style={[type.questSub, styles.allDone]}>
+                  All {QUESTS.length} done. Come back tomorrow.
+                </Text>
+              </Rise>
+            )}
           </View>
         </View>
       </Animated.ScrollView>
 
       <Celebration token={burst} origin={burstAt} />
+      <QuestDust dust={dust} onSettled={settle} />
     </View>
   );
 }
@@ -517,4 +572,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countText: { marginLeft: 6, color: colors.questTitle },
+  allDone: { color: colors.questBody, textAlign: 'center', paddingVertical: 22 },
 });

@@ -112,5 +112,11 @@ export const QUESTS: Quest[] = [
   },
 ];
 
-/** Which quests the frame draws a check on: the first and the fourth. */
-export const SEED_DONE = ['q-skincare-am', 'q-skincare-pm'];
+/**
+ * Which quests are struck through on a fresh day: none.
+ *
+ * The frame draws two of them checked, but that is a comp showing what a
+ * completed row looks like, not a starting state — a quest list you did not
+ * fill in cannot open with two of its five already done.
+ */
+export const SEED_DONE: string[] = [];

@@ -515,6 +515,54 @@ re-renders about once per screen of travel rather than per frame.
 Together that halved the element count and cut the tallest layer from 5143pt to
 1100.
 
+## Striking a quest through
+
+Nothing is ticked when the screen opens, and ticking is one way: the mark lands,
+the row comes apart into dust, and the rows below rise into the gap it leaves.
+There is no undo — a quest you did is done.
+
+The dust is a Skia runtime shader (`components/home/dustShader.ts`) run over a
+snapshot of the row, taken by `captureRef` the moment the mark lands, so what
+blows away is the row you just completed rather than the row as it was before.
+Expo Go for SDK 57 bundles `react-native-view-shot`, and on web it falls back to
+html2canvas, so the same path runs on both — the web capture just takes about a
+second where the native one takes tens of milliseconds.
+
+It is a paint shader over that snapshot rather than a particle system: a system
+would need a vertex per speck, tens of thousands of them rebuilt every frame,
+where this is one quad and a fragment. The cost is that specks cannot be tracked
+individually, so their motion is inferred — for a pixel, the shader works out
+which speck would have landed there and samples the snapshot back along that
+speck's path. Jittering neighbouring specks apart is what makes that sampling
+read as grain rather than a smear. Three things then run at once: a ragged front
+sweeps across, each cell winks out at its own moment, and specks shrink to dots
+as they travel.
+
+They also darken as they fly, which is the one liberty taken with the
+snapshot's colour, and it is load-bearing. The reference this came from is a
+bright card on black; a quest row is `F6FAFF` on a white sheet, so specks
+carrying its fill are invisible unless they shade. What you see coming apart is
+mostly the title, the sprite, the mark and the reward text — which is exactly
+why the effect works off the snapshot rather than off the row's fill colour.
+
+Two mechanics underneath it:
+
+- **The canvas is over the whole screen, and always mounted.** Specks fly
+  further than the row is tall, so a canvas sized to the row would have to
+  escape its own bounds, which Android does not reliably allow. Always mounted
+  because a Skia canvas sizes its surface from its first layout: one mounted
+  mid-animation has none, paints once into nothing, and — since the flight is
+  driven by shared values rather than state — never gets a second render to
+  correct itself. The dust came out invisible that way with every value along
+  the path correct.
+- **It is wrapped in a plain `View` with `pointerEvents="none"`.** On the canvas
+  alone, web keeps taking the taps and nothing in the list can be struck through
+  at all.
+
+`QuestRow` collapses its own slot rather than being unmounted on the spot, so
+the list closes over it while its dust is still in the air. A row that will not
+snapshot skips straight to gone: the dust is the flourish, not the mechanism.
+
 ## Node states
 
 The frame draws three: a check on completed lessons, a play glyph on the one

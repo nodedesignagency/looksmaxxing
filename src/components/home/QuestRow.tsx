@@ -2,11 +2,13 @@ import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { captureRef } from 'react-native-view-shot';
 import Animated, {
   Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withSequence,
   withSpring,
   withTiming,
@@ -30,16 +32,35 @@ import { colors, layout, radii, springs, type } from '../../theme/tokens';
  * status mark, not left to fill what is spare. That gap is what truncates the
  * body copy at "and Sham…" the way the frame does; letting it run to the mark
  * buys twelve points, and the line fits, and the row stops matching.
+ *
+ * Striking a quest through is one-way, and the row does not stay: the mark
+ * lands, the row snapshots itself, and it hands that snapshot up to be blown
+ * away as dust while the slot it sat in closes and the rows below rise into
+ * the gap. Undo is not offered, which is the point — a quest you did is done.
  */
+
+/** How long the mark takes to land, and so how long until the snapshot. */
+const MARK_MS = 260;
+/** The slot holds still for a beat before closing, so the dust leads. */
+const CLOSE_DELAY = 150;
+const CLOSE_MS = 340;
 
 type Props = {
   quest: Quest;
   done: boolean;
+  /** True once the snapshot is up and the dust is flying. */
+  clearing: boolean;
   /** `at` is where the confetti should come from, in screen coordinates. */
-  onToggle: (id: string, at: { x: number; y: number }) => void;
+  onTick: (id: string, at: { x: number; y: number }) => void;
+  /** The row, as a PNG in base64, and where it was when it was taken. */
+  onDust: (
+    id: string,
+    base64: string | null,
+    frame: { x: number; y: number; width: number; height: number },
+  ) => void;
 };
 
-export default function QuestRow({ quest, done, onToggle }: Props) {
+export default function QuestRow({ quest, done, clearing, onTick, onDust }: Props) {
   const press = useSharedValue(0);
   const mark = useSharedValue(done ? 1 : 0);
   const flash = useSharedValue(0);
@@ -66,17 +87,73 @@ export default function QuestRow({ quest, done, onToggle }: Props) {
    */
   const statusRef = React.useRef<View | null>(null);
 
+  /** The row itself, which is what gets snapshotted. */
+  const rowRef = React.useRef<View | null>(null);
+
   const fire = React.useCallback(() => {
+    // One way. A row already on its way out must not be struck again.
+    if (done) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const node = statusRef.current;
     if (node) {
       node.measureInWindow((x, y, w, h) => {
-        onToggle(quest.id, { x: x + w / 2, y: y + h / 2 });
+        onTick(quest.id, { x: x + w / 2, y: y + h / 2 });
       });
     } else {
-      onToggle(quest.id, { x: 0, y: 0 });
+      onTick(quest.id, { x: 0, y: 0 });
     }
-  }, [onToggle, quest.id]);
+  }, [done, onTick, quest.id]);
+
+  /**
+   * Once the mark has landed, take the row's picture and hand it up.
+   *
+   * The snapshot is taken here rather than at the tap because what should come
+   * apart is the row you just completed — mark stamped, green still washing
+   * through it — not the row as it was a moment before.
+   *
+   * The frame is measured in window coordinates because the dust is drawn on a
+   * canvas over the whole screen, not inside the list.
+   */
+  React.useEffect(() => {
+    if (!done || clearing) return;
+    let live = true;
+    const timer = setTimeout(async () => {
+      const node = rowRef.current;
+      const frame = await new Promise<{ x: number; y: number; width: number; height: number }>(
+        (resolve) => {
+          if (!node) return resolve({ x: 0, y: 0, width: 0, height: 0 });
+          node.measureInWindow((x, y, width, height) => resolve({ x, y, width, height }));
+        },
+      );
+      let shot: string | null = null;
+      try {
+        shot = node ? await captureRef(rowRef, { result: 'base64', format: 'png' }) : null;
+      } catch {
+        // A row that will not snapshot still leaves the list; it just goes
+        // without its dust.
+        shot = null;
+      }
+      if (live) onDust(quest.id, shot, frame);
+    }, MARK_MS);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [done, clearing, onDust, quest.id]);
+
+  /** The slot closes once the dust is up, and the rows below come with it. */
+  const close = useSharedValue(0);
+  React.useEffect(() => {
+    if (!clearing) return;
+    close.value = withDelay(
+      CLOSE_DELAY,
+      withTiming(1, { duration: CLOSE_MS, easing: Easing.out(Easing.cubic) }),
+    );
+  }, [clearing, close]);
+
+  const slotStyle = useAnimatedStyle(() => ({
+    height: (1 - close.value) * SLOT,
+  }));
 
   const tap = React.useMemo(
     () =>
@@ -113,51 +190,64 @@ export default function QuestRow({ quest, done, onToggle }: Props) {
   }));
 
   return (
-    <GestureDetector gesture={tap}>
-      <Animated.View style={[styles.row, rowStyle]}>
-        <Animated.View style={[styles.tint, fillStyle]} pointerEvents="none" />
+    <Animated.View style={[styles.slot, slotStyle]}>
+      <GestureDetector gesture={tap}>
+        <Animated.View
+          ref={rowRef}
+          collapsable={false}
+          style={[styles.row, rowStyle, clearing && styles.handedOver]}
+        >
+          <Animated.View style={[styles.tint, fillStyle]} pointerEvents="none" />
 
-        {/* The frame sets the sprite on a pale disc rather than the row itself. */}
-        <Animated.View style={[styles.iconPlate, iconStyle]}>
-          <Image source={CHIP_IMAGES[quest.glyph]} style={styles.icon} resizeMode="contain" />
-        </Animated.View>
+          {/* The frame sets the sprite on a pale disc rather than the row itself. */}
+          <Animated.View style={[styles.iconPlate, iconStyle]}>
+            <Image source={CHIP_IMAGES[quest.glyph]} style={styles.icon} resizeMode="contain" />
+          </Animated.View>
 
-        <View style={styles.text}>
-          <Text style={[type.questTitle, styles.title]} numberOfLines={1}>
-            {quest.title}
-          </Text>
-          <Text style={[type.questBody, styles.body]} numberOfLines={1}>
-            {quest.detail}
-          </Text>
+          <View style={styles.text}>
+            <Text style={[type.questTitle, styles.title]} numberOfLines={1}>
+              {quest.title}
+            </Text>
+            <Text style={[type.questBody, styles.body]} numberOfLines={1}>
+              {quest.detail}
+            </Text>
 
-          {/* "Frame 2147236453" — XP at x=0, gems at x=56, in an 86-wide row. */}
-          <View style={styles.rewards}>
-            <View style={styles.reward}>
-              <BoltIcon size={11} color={colors.xpGreen} />
-              <Text style={[type.questReward, styles.xp]}>+{quest.xp} XP</Text>
-            </View>
-            <View style={[styles.reward, styles.rewardGap]}>
-              <GemIcon size={12} />
-              <Text style={[type.questReward, styles.gem]}>+{quest.gems}</Text>
+            {/* "Frame 2147236453" — XP at x=0, gems at x=56, in an 86-wide row. */}
+            <View style={styles.rewards}>
+              <View style={styles.reward}>
+                <BoltIcon size={11} color={colors.xpGreen} />
+                <Text style={[type.questReward, styles.xp]}>+{quest.xp} XP</Text>
+              </View>
+              <View style={[styles.reward, styles.rewardGap]}>
+                <GemIcon size={12} />
+                <Text style={[type.questReward, styles.gem]}>+{quest.gems}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* "Frame 2147236430" — 24x24, a filled check once the quest is struck
-            through and a dashed ring until then. */}
-        <View ref={statusRef} style={[styles.status, !done && styles.statusPending]}>
-          {done && (
-            <Animated.View style={[styles.statusDone, markStyle]}>
-              <CheckIcon size={16} color={colors.surface} />
-            </Animated.View>
-          )}
-        </View>
-      </Animated.View>
-    </GestureDetector>
+          {/* "Frame 2147236430" — 24x24, a filled check once the quest is struck
+              through and a dashed ring until then. */}
+          <View ref={statusRef} style={[styles.status, !done && styles.statusPending]}>
+            {done && (
+              <Animated.View style={[styles.statusDone, markStyle]}>
+                <CheckIcon size={16} color={colors.surface} />
+              </Animated.View>
+            )}
+          </View>
+        </Animated.View>
+      </GestureDetector>
+    </Animated.View>
   );
 }
 
+/** A row and the gap under it: what the slot gives back as it closes. */
+const SLOT = layout.questRow + layout.questRowGap;
+
 const styles = StyleSheet.create({
+  slot: { height: SLOT, overflow: 'hidden' },
+  // Once the snapshot is up, the dust is the row. Leaving this drawn as well
+  // would show it collapsing behind its own debris.
+  handedOver: { opacity: 0 },
   row: {
     height: layout.questRow,
     borderRadius: radii.questRow,
