@@ -129,6 +129,8 @@ export const colors = {
   questPending: '#BCD4E6',
   /** The quest ring's track — paler than the dashed ring on a pending row. */
   ringTrack: '#DFEEF7',
+  /** The count pill's hairline. Same ECF0F9 the Skill Path chips are edged in. */
+  countPillEdge: '#ECF0F9',
   /** The pale disc the frame sets each quest sprite on. */
   questIconPlate: 'rgba(255, 255, 255, 0.75)',
   /** Gems, the second currency beside XP. */
@@ -254,6 +256,8 @@ export const radii = {
   levelCard: 16,
   questCard: 16,
   questRow: 12,
+  /** Past half the pill's 26, so it capsules. */
+  countPill: 50,
 } as const;
 
 /**

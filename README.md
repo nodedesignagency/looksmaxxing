@@ -381,9 +381,11 @@ The conversions from Figma's 0–100 scale to points live in `FIGMA_GLASS` in
 that file, and that is the place to retune it.
 
 **The sky is a Skia canvas because of this.** A shader can only bend what it
-is handed, so `Sky` in `HomeScreen.tsx` paints the gradient and the two cloud
-plates in Skia, and paints the pill's glass into the same canvas at the pill's
-frame. The `Glass` component in the scroll view draws nothing: it lays out the
+is handed, so `Sky` in `HomeScreen.tsx` paints the gradient and the cloud plate
+in Skia, and paints the pill's glass into the same canvas at the pill's frame.
+There is one plate, low on the screen, so at rest the pill is a lens on the
+gradient alone and picks the cloud up as the two scroll past each other at
+different rates. The `Glass` component in the scroll view draws nothing: it lays out the
 gem and the count and reports its size, and the sky follows the scroll and the
 greeting row's entrance on the UI thread so the two never separate.
 
@@ -398,11 +400,16 @@ Two mechanics underneath it:
   `ImageShader`s at the same rects the sky draws them at. That runs on iOS,
   Android and web alike, in points, with no pixel-density arithmetic.
 - **Frost is baked.** A shader can no more blur an input than read the canvas,
-  so `scripts/frost-cloud.js` writes a blurred copy of each plate
-  (`cloud-main-frost.png`, `cloud-3-frost.png`), with the sigma converted from
-  points to the plate's own pixels through the box it is drawn into. The
-  gradient is smooth enough that blurring it would change nothing. Re-run it
-  after re-exporting a plate or changing Frost.
+  so `scripts/frost-cloud.js` writes a blurred copy of the plate
+  (`cloud-main-frost.png`), with the sigma converted from points to the plate's
+  own pixels through the box it is drawn into. The gradient is smooth enough
+  that blurring it would change nothing. Re-run it after re-exporting the plate
+  or changing Frost:
+
+  ```bash
+  node scripts/frost-cloud.js assets/clouds/cloud-main.png \
+    assets/clouds/cloud-main-frost.png 400 260 3.5
+  ```
 
 Skia is pinned to an exact version, like `react-native-worklets`, because Expo
 Go ships its native side: `2.6.2` is what `expo/bundledNativeModules.json`

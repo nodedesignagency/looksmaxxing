@@ -11,11 +11,11 @@
  * It runs as a paint shader, not a backdrop filter. A backdrop filter would
  * read the canvas for it, but Skia's web backend has no runtime-shader image
  * filter at all — so that path could never be checked anywhere but a device.
- * A paint shader is handed its backdrop instead: the sky's gradient and the
- * two cloud plates, as child shaders placed exactly where the sky draws them.
- * Frost is baked into those plates (`scripts/frost-cloud.js`), since a shader
- * can no more blur an input than read the canvas. Everything here is then in
- * points, on every platform.
+ * A paint shader is handed its backdrop instead: the sky's gradient and its
+ * cloud plate, as child shaders placed exactly where the sky draws them. Frost
+ * is baked into the plate (`scripts/frost-cloud.js`), since a shader can no
+ * more blur an input than read the canvas. Everything here is then in points,
+ * on every platform.
  *
  * The frame's sliders map onto the uniforms one to one:
  *
@@ -31,10 +31,8 @@
  */
 export const GLASS_SKSL = `
 uniform shader sky;         // the gradient
-uniform shader cloudA;      // the frosted plates, placed as the sky draws them
-uniform shader cloudB;
-uniform float alphaA;       // and their opacities
-uniform float alphaB;
+uniform shader cloudA;      // the frosted plate, placed as the sky draws it
+uniform float alphaA;       // and its opacity
 
 uniform float2 origin;      // plate top-left, in points
 uniform float2 size;        // plate size
@@ -60,15 +58,12 @@ float rimLine(float d, float edge) {
   return 1.0 - smoothstep(0.0, edge, -d);
 }
 
-// What is behind the plate at a point: the plates over the gradient,
-// source-over in premultiplied colour, the way the sky paints them.
+// What is behind the pill at a point: the plate over the gradient, source-over
+// in premultiplied colour, the way the sky paints it.
 half4 backdrop(float2 uv) {
   half4 c = sky.eval(uv);
   half4 a = cloudA.eval(uv) * half(alphaA);
-  c = a + c * (1.0 - a.a);
-  half4 b = cloudB.eval(uv) * half(alphaB);
-  c = b + c * (1.0 - b.a);
-  return c;
+  return a + c * (1.0 - a.a);
 }
 
 half4 main(float2 xy) {

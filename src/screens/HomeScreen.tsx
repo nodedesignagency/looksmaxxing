@@ -251,10 +251,11 @@ export default function HomeScreen() {
                 <Text style={[type.questSub, styles.questSubhead]}>Quests resets at midnight</Text>
               </View>
 
-              {/* "Frame 2147236451" — a 105x26 pill around an 18x18 ring. Solid
-                  white, not frosted: it sits on the sheet rather than the sky,
-                  and there is nothing behind it worth blurring. */}
+              {/* "Frame 2147236451" — a 105x26 pill around an 18x18 ring, with
+                  no fill of its own: the sheet shows through, and a 1px inside
+                  hairline is the only thing that draws it. */}
               <View style={styles.countPill}>
+                <View style={styles.countPillRing} pointerEvents="none" />
                 <Ring done={completed} total={QUESTS.length} />
                 <Text style={[type.questCount, styles.countText]}>
                   {completed}/{QUESTS.length} completed
@@ -320,22 +321,24 @@ export default function HomeScreen() {
 const GLASS = Skia.RuntimeEffect.Make(GLASS_SKSL);
 
 /**
- * The two plates: their boxes (fitted with `contain`), opacity, and motion.
+ * The plate: its box (fitted with `contain`), opacity, and motion.
  *
  * Only the top of this screen is sky. The streak card covers 128-294 bar a 20
  * gutter each side, and the sheet covers everything from 310 down, so a plate
  * is seen through four gaps: the band above the card, the two gutters, the 16
  * between card and sheet, and the sheet's own 32 corners.
  *
- * The big plate is placed to cross that lower run rather than sit above it, so
- * it reads as one cloud passing behind the cards — caught in the gutters, the
- * gap and the corners at once. It was at y=30 before, entirely in the top
- * band; the second plate was at y=330, entirely under the sheet and so never
- * visible at all. That one now sits over the greeting row, which is both where
- * the frame draws cloud and what the gem pill's glass has to bend.
+ * It is placed to cross that lower run rather than sit above it, so it reads
+ * as one cloud passing behind the cards — caught in the gutters, the gap and
+ * the corners at once.
+ *
+ * There is one plate rather than two. A second sat over the greeting row, and
+ * it is what the gem pill's glass had to bend; without it the pill is a lens
+ * on the gradient alone at rest, and picks the cloud up as the two scroll past
+ * each other at different rates. The glass reads on plain sky, so the sky above
+ * the greeting is left clear.
  */
 const CLOUD_MAIN = { y: 168, w: 400, h: 260, opacity: 0.95, drift: 10, rate: 0.14 };
-const CLOUD_LEFT = { x: 40, y: -34, w: 300, h: 200, opacity: 0.8, drift: 14, rate: 0.06 };
 
 type Frame = { x: number; y: number; w: number; h: number };
 
@@ -352,17 +355,14 @@ function Sky({
 }) {
   const { width, height } = useWindowDimensions();
   const cloudMain = useImage(require('../../assets/clouds/cloud-main.png'));
-  const cloudLeft = useImage(require('../../assets/clouds/cloud-3.png'));
   const frostMain = useImage(require('../../assets/clouds/cloud-main-frost.png'));
-  const frostLeft = useImage(require('../../assets/clouds/cloud-3-frost.png'));
 
   const driftA = useDrift(13000);
-  const driftB = useDrift(17000);
   // Centred, near enough: the band it crosses is the full width of the screen.
   const mainX = width + 30 - CLOUD_MAIN.w;
 
-  // Where each plate is right now — drawn from these, and read by the lens
-  // from the same, so the glass bends the cloud that is actually behind it.
+  // Where the plate is right now — drawn from this, and read by the lens from
+  // the same, so the glass bends the cloud that is actually behind it.
   const farRect = useDerivedValue(
     () =>
       rect(
@@ -372,14 +372,6 @@ function Sky({
         CLOUD_MAIN.h,
       ),
     [mainX],
-  );
-  const nearRect = useDerivedValue(() =>
-    rect(
-      CLOUD_LEFT.x + (driftB.value - 0.5) * 2 * CLOUD_LEFT.drift,
-      CLOUD_LEFT.y - scrollY.value * CLOUD_LEFT.rate,
-      CLOUD_LEFT.w,
-      CLOUD_LEFT.h,
-    ),
   );
 
   // The pill's frame right now: its resting place, less the scroll, plus the
@@ -393,7 +385,6 @@ function Sky({
     const y = lens.y - scrollY.value + (1 - enter.value) * LIFT;
     return {
       alphaA: CLOUD_MAIN.opacity,
-      alphaB: CLOUD_LEFT.opacity,
       origin: [lens.x, y],
       size: [lens.w, lens.h],
       radius: PILL_RADIUS,
@@ -421,18 +412,16 @@ function Sky({
         <SkGradient {...gradient} />
       </Rect>
       <SkImage image={cloudMain} rect={farRect} fit="contain" opacity={CLOUD_MAIN.opacity} />
-      <SkImage image={cloudLeft} rect={nearRect} fit="contain" opacity={CLOUD_LEFT.opacity} />
 
       {/* The pill's glass: the sky as the lens sees it, bent into its frame.
-          Nothing is drawn until the pill has reported its size and both
-          frosted plates are in, since the shader needs all three inputs. */}
-      {GLASS && frostMain && frostLeft && lens.w > 0 ? (
+          Nothing is drawn until the pill has reported its size and the frosted
+          plate is in, since the shader needs both inputs. */}
+      {GLASS && frostMain && lens.w > 0 ? (
         <Group clip={clip}>
           <Fill>
             <Shader source={GLASS} uniforms={uniforms}>
               <SkGradient {...gradient} />
               <ImageShader image={frostMain} rect={farRect} fit="contain" tx="decal" ty="decal" />
-              <ImageShader image={frostLeft} rect={nearRect} fit="contain" tx="decal" ty="decal" />
             </Shader>
           </Fill>
         </Group>
@@ -568,15 +557,27 @@ const styles = StyleSheet.create({
   questHeadText: { flex: 1 },
   questHeading: { color: colors.heading },
   questSubhead: { color: colors.questBody, marginTop: 4 },
+  // 4 in from the ring's side, 8 from the label's: 4 + 18 + 6 + 69 + 8 = 105.
   countPill: {
     height: 26,
-    paddingHorizontal: 8,
-    borderRadius: 13,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.questPending,
+    paddingLeft: 4,
+    paddingRight: 8,
+    borderRadius: radii.countPill,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  // An inset ring, not `borderWidth`: Figma's "Inside" stroke paints over the
+  // frame without taking layout, where a border eats into the content box and
+  // would leave the 18 ring 2 short of its 26.
+  countPillRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radii.countPill,
+    borderWidth: 1,
+    borderColor: colors.countPillEdge,
   },
   countText: { marginLeft: 6, color: colors.questTitle },
   allDone: { color: colors.questBody, textAlign: 'center', paddingVertical: 22 },
