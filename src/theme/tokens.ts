@@ -79,21 +79,36 @@ export const colors = {
    */
   /** The sheet the lower two thirds of the screen sits on. */
   sheet: '#FFFFFF',
-  /** Streak card: a translucent plate on the sky, holding an opaque one. */
-  streakPlate: 'rgba(255, 255, 255, 0.42)',
-  streakInner: '#FFFFFF',
   /**
-   * The gem pill beside the avatar, same construction as the streak plate.
+   * Streak card. Read off the inspector, not the render: it is an opaque
+   * F6FAFF card holding a white plate, both with the same hairline stroke.
    *
-   * Weighted well towards white. Blur alone takes the sky's colour with it, so
-   * a plate at a third opacity comes out blue rather than frosted — which is
-   * what the first pass did, and it is the difference between glass and a
-   * tinted window.
+   * It looked frosted in the comp and was built that way, which was wrong —
+   * F6FAFF over this sky reads as glass without being any, and the giveaway is
+   * that the cloud behind it never actually moves through it.
    */
-  glassFill: 'rgba(255, 255, 255, 0.46)',
-  glassEdge: 'rgba(255, 255, 255, 0.7)',
-  /** Greeting: the light line over the heavy one. */
-  greeting: '#2E5C79',
+  streakPlate: '#F6FAFF',
+  streakInner: '#FFFFFF',
+  /** The 1px inside stroke on both, and on the level card. */
+  cardStroke: '#ECF0F9',
+  /**
+   * The gem pill — the one piece of real glass on the screen.
+   *
+   * Figma's Glass material on it reads Frost 67, Light -45 degrees at 80%,
+   * Refraction 32, Depth 95, Dispersion 50, Splay 48. Refraction and dispersion
+   * bend and split what is behind the plate, which nothing in React Native
+   * does; frost and the light are reproducible, and between them they carry
+   * most of what the effect looks like.
+   *
+   * So: a heavy blur, and a lit face rather than a flat one — bright at the
+   * top-left corner the light comes from, falling away to the opposite one.
+   */
+  glassLit: 'rgba(255, 255, 255, 0.58)',
+  glassShade: 'rgba(255, 255, 255, 0.16)',
+  glassEdge: 'rgba(255, 255, 255, 0.75)',
+  /** Greeting: both lines white on the sky, the light one a shade back. */
+  greeting: 'rgba(255, 255, 255, 0.9)',
+  greetingHeavy: '#FFFFFF',
   heading: '#07202F',
   /** Week strip. */
   dayLabel: '#8FA6B6',
@@ -172,7 +187,13 @@ export const layout = {
   homeGutter: 20,
   streakCard: 166,
   streakPlate: 88,
+  /** 10 on three sides, 6 under the week strip, 6 between the two children. */
   streakPad: 10,
+  streakPadBottom: 6,
+  streakGap: 6,
+  /** The white plate's own padding, and the gap to the medal. */
+  streakInnerPad: 14,
+  streakInnerGap: 16,
   weekStrip: 56,
   weekCell: 44,
   weekGap: 3.67,
@@ -226,8 +247,10 @@ export const radii = {
   card: 18,
   /** Home: the sheet's top corners, its cards, and a quest row. */
   homeSheet: 32,
-  homeCard: 24,
-  homeInner: 16,
+  /** Straight off the inspector: 12 on the streak card, 8 on its white plate. */
+  homeCard: 12,
+  homeInner: 8,
+  levelCard: 16,
   questRow: 16,
 } as const;
 

@@ -10,7 +10,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import Glass from './Glass';
 import { useCountUp } from './motion';
 import { CheckIcon, MedalIcon } from '../../icons/Glyphs';
 import type { StreakDay } from '../../data/home';
@@ -19,19 +18,29 @@ import { colors, layout, radii, springs, type } from '../../theme/tokens';
 /**
  * "Frame 2147236231" — 350x166 at (20, 128).
  *
- * Two plates, not one: a frosted 350x166 card on the sky holding an opaque
- * 330x88 one at (10, 10), with the week strip below it reading through the
- * frost. That contrast is the card — the sky comes through the outer plate and
- * stops at the inner one, which is what gives the headline something to sit on.
+ * Two plates, and neither is glass. Straight off the inspector: an opaque
+ * F6FAFF card at radius 12, 10 padding on three sides and 6 under, holding a
+ * white 330x88 plate at radius 8 with 14 padding — both carrying the same 1px
+ * inside stroke in ECF0F9, and 6 between them. The week strip below has no fill
+ * of its own and sits on the card's own F6FAFF.
+ *
+ * It was built frosted first, from the render, and that was wrong: F6FAFF over
+ * this sky *looks* like glass, and the tell is that the cloud behind it never
+ * moves through it. Only the gem pill is real glass on this frame.
+ *
+ * Both strokes are drawn as inset rings rather than `borderWidth`. Figma's
+ * "Inside" stroke paints over the frame without taking layout, but a border in
+ * React Native eats into the content box — and this card has no slack to give:
+ * 166 is exactly 10 + 88 + 6 + 56 + 6, so a 1px border on each edge overflows
+ * it by two and the week strip loses its bottom.
  */
 
 type Props = {
   days: number;
   week: StreakDay[];
-  target?: React.RefObject<View | null>;
 };
 
-export default function StreakCard({ days, week, target }: Props) {
+export default function StreakCard({ days, week }: Props) {
   const shown = useCountUp(days, 700, 320);
 
   // The medal breathes and tilts on a long loop, out of phase with itself, so
@@ -54,8 +63,12 @@ export default function StreakCard({ days, week, target }: Props) {
   }));
 
   return (
-    <Glass style={styles.card} radius={radii.homeCard} target={target}>
+    <View style={styles.card}>
+      <View style={styles.cardRing} pointerEvents="none" />
+
       <View style={styles.plate}>
+        <View style={styles.plateRing} pointerEvents="none" />
+
         {/* "Frame 2147236414" at (14, 20.5), 226 wide. */}
         <View style={styles.headline}>
           <Text style={[type.streakLabel, styles.label]}>CURRENT STREAK</Text>
@@ -75,7 +88,7 @@ export default function StreakCard({ days, week, target }: Props) {
           <Day key={day.label} day={day} index={i} />
         ))}
       </View>
-    </Glass>
+    </View>
   );
 }
 
@@ -149,18 +162,50 @@ function Day({ day, index }: { day: StreakDay; index: number }) {
 }
 
 const styles = StyleSheet.create({
-  card: { height: layout.streakCard, padding: layout.streakPad },
+  card: {
+    height: layout.streakCard,
+    borderRadius: radii.homeCard,
+    backgroundColor: colors.streakPlate,
+    paddingTop: layout.streakPad,
+    paddingLeft: layout.streakPad,
+    paddingRight: layout.streakPad,
+    paddingBottom: layout.streakPadBottom,
+    // The frame's own gap between the white plate and the week strip.
+    gap: layout.streakGap,
+  },
   plate: {
     height: layout.streakPlate,
     borderRadius: radii.homeInner,
     backgroundColor: colors.streakInner,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingLeft: 14,
-    paddingRight: 14,
+    padding: layout.streakInnerPad,
+    gap: layout.streakInnerGap,
   },
-  headline: { justifyContent: 'center' },
+  /** ECF0F9 at 1px, inside, on both plates — painted over, never in layout. */
+  cardRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radii.homeCard,
+    borderWidth: 1,
+    borderColor: colors.cardStroke,
+  },
+  plateRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radii.homeInner,
+    borderWidth: 1,
+    borderColor: colors.cardStroke,
+  },
+  // 226 of the plate's 302 of content; the medal takes the other 60 plus a 16
+  // gap, which is exactly what the frame's auto layout distributes.
+  headline: { flex: 1, justifyContent: 'center' },
   label: { color: colors.inkMuted },
   days: { color: colors.heading, marginTop: 4 },
 

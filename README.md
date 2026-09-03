@@ -319,7 +319,7 @@ So the split is:
 | --- | --- | --- |
 | Geometry — every position, size, inset and gap | `get_metadata` | yes, transcribed |
 | Copy — every string | `get_metadata` layer names | yes |
-| Colour | read off the rendered frame | no, a reading |
+| Colour | inspector where it was shared, else read off the render | exact where shared |
 | Type sizes | derived from each text box's width | no, close |
 | Raster art — medal, gem, crown, avatar | exported by hand from the file | yes |
 
@@ -345,28 +345,37 @@ category chips already use, so they are `require`d from `CHIP_IMAGES` rather
 than redrawn. The medal, gem and crown are new vectors on the same 24px grid as
 the other hand-drawn glyphs, and the avatar stands in for a photo.
 
-### The glass
+### The glass, and what is not glass
 
-The frame's streak card, gem pill and counter are frosted, not translucent —
-they let the cloud behind them through *softened*, which a flat white at a third
-opacity cannot do. Over a cloud edge that reads as a grey wash, which is what
-the first pass looked like. `Glass` wraps `expo-blur`, which Expo Go for SDK 57
-ships natively, so it works without a dev client.
+**Only the gem pill is glass.** The streak card looks frosted in the comp and
+was built that way at first, from the render — wrong. Its inspector reads an
+opaque `F6FAFF` fill with a 1px inside stroke in `ECF0F9` at radius 12, holding
+a white plate at radius 8 with the same stroke. `F6FAFF` over this sky simply
+*looks* like glass, and the tell is that the cloud behind it never moves through
+it. The counter pill is not glass either: it sits on the white sheet with
+nothing behind it worth blurring.
 
-Three things about it are load-bearing:
+The gem pill carries Figma's Glass material: Frost 67, Light −45° at 80%,
+Refraction 32, Depth 95, Dispersion 50, Splay 48. Refraction and dispersion bend
+and split what is behind the plate and nothing in React Native does that; frost
+and the light do carry over, and between them they are most of the effect. So
+`Glass` is a heavy blur under a **lit** face — bright in the top-left corner the
+light comes from, falling to the opposite one — rather than the flat wash the
+first pass had, which next to the real thing reads as a sticker.
 
-- **The fill is a child layer, not the blur's `backgroundColor`.** Every tint
+Three mechanics are load-bearing:
+
+- **The face is a child layer, not the blur's `backgroundColor`.** Every tint
   lays its own translucent colour over the blur, and that wins over the style's
-  background — so the plate came out the colour of the sky. A child paints after
-  both.
-- **It is weighted well towards white** (0.46). Blur alone takes the sky's
-  colour with it; at a third the card is a tinted window rather than glass.
+  background — so the plate came out the colour of the sky.
 - **The sky is a `BlurTargetView`.** SDK 57's Android blur reads from one rather
   than from whatever happens to be behind the view, so the sky's ref comes down
-  to every plate. Without it Android falls back to the flat fill.
-
-The counter pill is deliberately *not* frosted: it sits on the white sheet, and
-there is nothing behind it worth blurring.
+  to the pill. Without it Android falls back to the face alone.
+- **Strokes are inset rings, not `borderWidth`.** Figma's "Inside" stroke paints
+  over a frame without taking layout; a border in React Native eats into the
+  content box. The streak card has no slack to give — its 166 is exactly
+  10 + 88 + 6 + 56 + 6 — so a 1px border on each edge overflows it by two and
+  the week strip loses its bottom.
 
 ### Type is solved, not guessed
 

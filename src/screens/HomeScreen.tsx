@@ -123,7 +123,7 @@ export default function HomeScreen() {
         </Rise>
 
         <Rise index={1} style={styles.streak}>
-          <StreakCard days={STREAK.days} week={STREAK.week} target={sky} />
+          <StreakCard days={STREAK.days} week={STREAK.week} />
         </Rise>
 
         {/*
@@ -308,8 +308,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  // Both lines are white on the sky, not ink. The comp reads the other way
+  // round only because a screenshot of the sky is lighter than the sky is.
   greeting: { color: colors.greeting },
-  welcome: { color: colors.heading, marginTop: 2 },
+  welcome: { color: colors.greetingHeavy, marginTop: 2 },
 
   account: { flexDirection: 'row', alignItems: 'center' },
   gemPill: {

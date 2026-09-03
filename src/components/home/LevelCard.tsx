@@ -170,7 +170,7 @@ function Badge({ done, delay, ready }: { done: boolean; delay: number; ready: bo
 const styles = StyleSheet.create({
   card: {
     height: layout.levelCard,
-    borderRadius: radii.homeInner,
+    borderRadius: radii.levelCard,
     backgroundColor: colors.levelCard,
     padding: layout.levelPad,
     justifyContent: 'space-between',
