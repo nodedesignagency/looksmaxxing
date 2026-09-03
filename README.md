@@ -357,40 +357,58 @@ nothing behind it worth blurring.
 
 The gem pill carries Figma's Glass material: Frost 67, Light −45° at 80%,
 Refraction 32, Depth 95, Dispersion 50, Splay 48, over a 10% white fill with no
-stroke. Everything on the rendered pill beyond that fill is the effect, so
-`Glass` builds each slider as its own layer, bottom up:
+stroke. That material is a **lens**: near the edge it samples what is behind
+the plate from displaced coordinates, so the backdrop is pulled and bent into a
+band around the perimeter, and the edge is lit against the light. Nothing built
+from views can do that — a blur under a fill under a rim, a gradient stroke, an
+inset shadow, and Apple's Liquid Glass were all tried here, and every one draws
+an outline, and an outline carries none of the image behind it.
 
-| Slider | Layer |
+So the pill is a shader. `components/home/glassShader.ts` is Figma's Glass as
+SkSL, with the frame's sliders as its uniforms:
+
+| Slider | Uniform |
 | --- | --- |
-| Frost 67 | `BlurView` at intensity 67, `default` tint |
-| Fill | white at 10%, as the inspector reads |
-| Light −45° 80% | a white wash from the top-left corner, gone by the middle |
-| Depth 95 / Splay 48 | a 6px soft band inside the rim, lit like the rim |
-| Dispersion 50 | a warm and a cool hairline just inside the rim |
-| Refraction 32 | the rim: a 1.5px stroke, brightest facing the light and again opposite it |
+| Frost 67 | blur of the backdrop, baked into the cloud plates (below) |
+| Refraction 32 | how far the sample is displaced at the rim |
+| Depth 95 | how far in from the edge the bent band reaches |
+| Splay 48 | the falloff curve across that band |
+| Dispersion 50 | how far red and blue are split from green at the rim |
+| Light −45° 80% | where the light comes from, and how hard the edge lights |
+| Fill 10% | the frame's own white, over the bent backdrop |
 
-The rim and the band are SVG strokes with a gradient along −45°, not borders. A
-border is one colour the whole way round, and a lit edge is not — brightest
-where it faces the light, bright again opposite, fading through the sides. That
-gradient is most of what makes it read as glass rather than a chip.
+The conversions from Figma's 0–100 scale to points live in `FIGMA_GLASS` in
+that file, and that is the place to retune it.
 
-Apple's Liquid Glass (`expo-glass-effect`) was tried in place of all this, and on
-a light sky it is far quieter than Figma's material: the rim, which is the part
-that carries the effect, all but disappears. A Skia lens shader was tried after
-it, and could only refract what its own canvas painted, so the whole sky would
-have had to move into Skia to feed it. Both are gone; this build is the same on
-iOS, Android and web, so it can be checked on any of them.
-
-The blur's tint matters: every tint lays its own translucent white over the
-blur, and `light` lays about half — five times the pill's whole fill — which is
-what turned the earlier pill milky. `default` lays a fifth.
+**The sky is a Skia canvas because of this.** A shader can only bend what it
+is handed, so `Sky` in `HomeScreen.tsx` paints the gradient and the two cloud
+plates in Skia, and paints the pill's glass into the same canvas at the pill's
+frame. The `Glass` component in the scroll view draws nothing: it lays out the
+gem and the count and reports its size, and the sky follows the scroll and the
+greeting row's entrance on the UI thread so the two never separate.
 
 Two mechanics underneath it:
 
-- **The fill is a sibling of the blur, not its `backgroundColor`.** The tint's
-  own colour wins over the style's background, so a fill set there is lost.
-- **The sky is a `BlurTargetView`.** SDK 57's Android blur reads from one rather
-  than from whatever happens to be behind the view.
+- **It is a paint shader, not a backdrop filter.** A `BackdropFilter` would
+  read the canvas for it, but Skia's web backend has no runtime-shader image
+  filter at all (`RuntimeShaderBuilder: Not implemented on React Native Web`),
+  so that build could never be checked anywhere but a device — which is how
+  the earlier attempts shipped blind. A paint shader is handed its backdrop as
+  child shaders instead: the same gradient, and the cloud plates as
+  `ImageShader`s at the same rects the sky draws them at. That runs on iOS,
+  Android and web alike, in points, with no pixel-density arithmetic.
+- **Frost is baked.** A shader can no more blur an input than read the canvas,
+  so `scripts/frost-cloud.js` writes a blurred copy of each plate
+  (`cloud-main-frost.png`, `cloud-3-frost.png`), with the sigma converted from
+  points to the plate's own pixels through the box it is drawn into. The
+  gradient is smooth enough that blurring it would change nothing. Re-run it
+  after re-exporting a plate or changing Frost.
+
+Skia is pinned to an exact version, like `react-native-worklets`, because Expo
+Go ships its native side: `2.6.2` is what `expo/bundledNativeModules.json`
+lists for SDK 57. On web it is CanvasKit, fetched from jsDelivr before the app
+loads — `index.ts` wraps the root in `WithSkiaWeb` for that, and pins the
+`canvaskit-wasm` version the package depends on.
 
 Strokes elsewhere on the screen are inset rings, not `borderWidth`: Figma's
 "Inside" stroke paints over a frame without taking layout, while a border in

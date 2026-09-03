@@ -1,13 +1,26 @@
-import { BlurTargetView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import {
+  Canvas,
+  Fill,
+  Group,
+  Image as SkImage,
+  ImageShader,
+  LinearGradient as SkGradient,
+  Rect,
+  Shader,
+  Skia,
+  rect,
+  rrect,
+  useImage,
+  vec,
+} from '@shopify/react-native-skia';
+import React, { useCallback, useMemo, useState } from 'react';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   useAnimatedProps,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withDelay,
   withRepeat,
@@ -17,10 +30,11 @@ import Animated, {
 import Svg, { Circle } from 'react-native-svg';
 import Celebration from '../components/Celebration';
 import Glass from '../components/home/Glass';
+import { FIGMA_GLASS, GLASS_SKSL } from '../components/home/glassShader';
 import LevelCard from '../components/home/LevelCard';
 import QuestRow from '../components/home/QuestRow';
 import StreakCard from '../components/home/StreakCard';
-import { Rise, useCountUp } from '../components/home/motion';
+import { LIFT, RISE, Rise, useCountUp, useEntrance } from '../components/home/motion';
 import { AvatarGlyph, GemIcon } from '../icons/Glyphs';
 import { GEMS, LEVEL, PLAYER, QUESTS, SEED_DONE, STREAK } from '../data/home';
 import { colors, layout, radii, type } from '../theme/tokens';
@@ -45,18 +59,25 @@ import { colors, layout, radii, type } from '../theme/tokens';
  * is blocked by this session's egress policy. Type sizes are solved rather than
  * read: see the note on the Home block in `tokens.ts`.
  *
- * The sky is a `BlurTargetView` because SDK 57's Android blur reads from one
- * rather than from whatever happens to be behind the view. Its ref goes down to
- * every frosted plate on the screen.
+ * The sky is a Skia canvas, and the gem pill's glass is drawn in it rather
+ * than over it: Figma's Glass is a lens, and a lens can only bend what its own
+ * canvas has painted. See `Sky`.
  */
 
 const GUTTER = layout.homeGutter;
+
+/** The pill's corner radius, off the inspector. Past half its height, so it capsules. */
+const PILL_RADIUS = 43;
+/** From the pill's right edge to the screen's: the avatar, its gap, the gutter. */
+const PILL_RIGHT = GUTTER + 16 + 40;
+/** The greeting row is 42 tall and the pill is centred in it. */
+const GREETING_ROW = 42;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const sky = useRef<View | null>(null);
+  const { width } = useWindowDimensions();
 
   const [done, setDone] = useState<string[]>(SEED_DONE);
   const [burst, setBurst] = useState(0);
@@ -91,9 +112,28 @@ export default function HomeScreen() {
 
   const gems = useCountUp(GEMS, 1000, 220);
 
+  /**
+   * Where the pill is, so the sky can draw its glass there.
+   *
+   * The pill hugs its count, so its width is measured; everything else about
+   * its position is the frame's own geometry. It rides the scroll and the
+   * greeting row's entrance, both of which the sky follows on the UI thread.
+   */
+  const [pillSize, setPillSize] = useState({ w: 0, h: 0 });
+  const pillEnter = useEntrance(60, RISE);
+  const lens = useMemo(
+    () => ({
+      x: width - PILL_RIGHT - pillSize.w,
+      y: insets.top + 11 + (GREETING_ROW - pillSize.h) / 2,
+      w: pillSize.w,
+      h: pillSize.h,
+    }),
+    [width, insets.top, pillSize],
+  );
+
   return (
     <View style={styles.root}>
-      <Sky innerRef={sky} scrollY={scrollY} />
+      <Sky scrollY={scrollY} lens={lens} enter={pillEnter} />
 
       <Animated.ScrollView
         onScroll={onScroll}
@@ -112,7 +152,7 @@ export default function HomeScreen() {
             {/* "Frame 2147235516" — a 74x41 pill: gem at 10, count at 34. */}
             {/* Radius 43, per the inspector — past half its 41 of height, so it
                 capsules, and a real number is what the native glass wants. */}
-            <Glass style={styles.gemPill} radius={43} target={sky}>
+            <Glass style={styles.gemPill} radius={PILL_RADIUS} onSize={setPillSize}>
               <GemIcon size={20} />
               <Text style={[type.gemCount, styles.gemCount]}>{gems}</Text>
             </Glass>
@@ -193,7 +233,7 @@ export default function HomeScreen() {
 }
 
 /**
- * The sky behind it all.
+ * The sky behind it all, and the glass in front of it.
  *
  * The frame lays a wide cloud plate off the right edge and drops two soft
  * ellipses on top — one at (219, -67), one at (-94, 732). Those ellipses are
@@ -203,59 +243,135 @@ export default function HomeScreen() {
  *
  * They travel at two rates against the scroll and drift on long loops of their
  * own, which is what stops the sky reading as wallpaper — and it is the motion
- * the frosted cards need to have anything to blur.
+ * the glass needs to have anything to bend.
+ *
+ * It is a Skia canvas because of the gem pill. Figma's Glass is a lens: near
+ * the edge it samples the backdrop from displaced coordinates, and that bent
+ * band is the whole effect. The lens is a paint shader, and a paint shader
+ * cannot read the canvas, so it is handed the sky instead — the same gradient,
+ * and frosted copies of the same plates at the same places — and painted into
+ * the pill's frame. The pill itself, up in the scroll view, is just the gem
+ * and the count on nothing. The two stay aligned because both follow the same
+ * scroll offset on the UI thread.
  */
-function Sky({
-  innerRef,
-  scrollY,
-}: {
-  innerRef: React.RefObject<View | null>;
-  scrollY: SharedValue<number>;
-}) {
-  const driftA = useDrift(10, 13000);
-  const driftB = useDrift(14, 17000);
 
-  const far = useAnimatedStyle(() => ({ transform: [{ translateY: -scrollY.value * 0.14 }] }));
-  const near = useAnimatedStyle(() => ({ transform: [{ translateY: -scrollY.value * 0.3 }] }));
+const GLASS = Skia.RuntimeEffect.Make(GLASS_SKSL);
+
+/** The two plates: their boxes (fitted with `contain`), opacity, and motion. */
+const CLOUD_MAIN = { y: 30, w: 360, h: 240, opacity: 0.95, drift: 10, rate: 0.14 };
+const CLOUD_LEFT = { x: -130, y: 330, w: 300, h: 200, opacity: 0.8, drift: 14, rate: 0.3 };
+
+type Frame = { x: number; y: number; w: number; h: number };
+
+function Sky({
+  scrollY,
+  lens,
+  enter,
+}: {
+  scrollY: SharedValue<number>;
+  /** The pill's frame in the scroll content, at rest. */
+  lens: Frame;
+  /** The greeting row's entrance, 0-1, so the glass arrives with the pill. */
+  enter: SharedValue<number>;
+}) {
+  const { width, height } = useWindowDimensions();
+  const cloudMain = useImage(require('../../assets/clouds/cloud-main.png'));
+  const cloudLeft = useImage(require('../../assets/clouds/cloud-3.png'));
+  const frostMain = useImage(require('../../assets/clouds/cloud-main-frost.png'));
+  const frostLeft = useImage(require('../../assets/clouds/cloud-3-frost.png'));
+
+  const driftA = useDrift(13000);
+  const driftB = useDrift(17000);
+  // Right -120 puts the box's right edge 120 past the screen's.
+  const mainX = width + 120 - CLOUD_MAIN.w;
+
+  // Where each plate is right now — drawn from these, and read by the lens
+  // from the same, so the glass bends the cloud that is actually behind it.
+  const farRect = useDerivedValue(
+    () =>
+      rect(
+        mainX + (driftA.value - 0.5) * 2 * CLOUD_MAIN.drift,
+        CLOUD_MAIN.y - scrollY.value * CLOUD_MAIN.rate,
+        CLOUD_MAIN.w,
+        CLOUD_MAIN.h,
+      ),
+    [mainX],
+  );
+  const nearRect = useDerivedValue(() =>
+    rect(
+      CLOUD_LEFT.x + (driftB.value - 0.5) * 2 * CLOUD_LEFT.drift,
+      CLOUD_LEFT.y - scrollY.value * CLOUD_LEFT.rate,
+      CLOUD_LEFT.w,
+      CLOUD_LEFT.h,
+    ),
+  );
+
+  // The pill's frame right now: its resting place, less the scroll, plus the
+  // lift the greeting row is still arriving with.
+  const clip = useDerivedValue(() => {
+    const y = lens.y - scrollY.value + (1 - enter.value) * LIFT;
+    return rrect(rect(lens.x, y, lens.w, lens.h), PILL_RADIUS, PILL_RADIUS);
+  }, [lens]);
+
+  const uniforms = useDerivedValue(() => {
+    const y = lens.y - scrollY.value + (1 - enter.value) * LIFT;
+    return {
+      alphaA: CLOUD_MAIN.opacity,
+      alphaB: CLOUD_LEFT.opacity,
+      origin: [lens.x, y],
+      size: [lens.w, lens.h],
+      radius: PILL_RADIUS,
+      refraction: FIGMA_GLASS.refraction,
+      depth: FIGMA_GLASS.depth,
+      splay: FIGMA_GLASS.splay,
+      dispersion: FIGMA_GLASS.dispersion,
+      edge: FIGMA_GLASS.edge,
+      light: FIGMA_GLASS.light,
+      lightAmt: FIGMA_GLASS.lightAmt,
+      fill: FIGMA_GLASS.fill,
+      amount: enter.value,
+    };
+  }, [lens]);
+
+  const gradient = {
+    start: vec(0, 0),
+    end: vec(0, height * 0.55),
+    colors: [colors.skyTop, colors.sky],
+  };
 
   return (
-    <BlurTargetView ref={innerRef} style={StyleSheet.absoluteFill} pointerEvents="none">
-      <LinearGradient
-        colors={[colors.skyTop, colors.sky]}
-        locations={[0, 0.55]}
-        style={StyleSheet.absoluteFill}
-      />
-      <Animated.View style={[styles.cloudTop, far]}>
-        <Animated.View style={driftA}>
-          <Image
-            source={require('../../assets/clouds/cloud-main.png')}
-            style={styles.cloudTopArt}
-            resizeMode="contain"
-          />
-        </Animated.View>
-      </Animated.View>
-      <Animated.View style={[styles.cloudLeft, near]}>
-        <Animated.View style={driftB}>
-          <Image
-            source={require('../../assets/clouds/cloud-3.png')}
-            style={styles.cloudLeftArt}
-            resizeMode="contain"
-          />
-        </Animated.View>
-      </Animated.View>
-    </BlurTargetView>
+    <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Rect x={0} y={0} width={width} height={height}>
+        <SkGradient {...gradient} />
+      </Rect>
+      <SkImage image={cloudMain} rect={farRect} fit="contain" opacity={CLOUD_MAIN.opacity} />
+      <SkImage image={cloudLeft} rect={nearRect} fit="contain" opacity={CLOUD_LEFT.opacity} />
+
+      {/* The pill's glass: the sky as the lens sees it, bent into its frame.
+          Nothing is drawn until the pill has reported its size and both
+          frosted plates are in, since the shader needs all three inputs. */}
+      {GLASS && frostMain && frostLeft && lens.w > 0 ? (
+        <Group clip={clip}>
+          <Fill>
+            <Shader source={GLASS} uniforms={uniforms}>
+              <SkGradient {...gradient} />
+              <ImageShader image={frostMain} rect={farRect} fit="contain" tx="decal" ty="decal" />
+              <ImageShader image={frostLeft} rect={nearRect} fit="contain" tx="decal" ty="decal" />
+            </Shader>
+          </Fill>
+        </Group>
+      ) : null}
+    </Canvas>
   );
 }
 
-/** A slow sideways wander, so no two clouds line up the same way twice. */
-function useDrift(distance: number, duration: number) {
+/** A slow 0-1-0 loop, so no two clouds line up the same way twice. */
+function useDrift(duration: number) {
   const t = useSharedValue(0);
   React.useEffect(() => {
     t.value = withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, true);
   }, [duration, t]);
-  return useAnimatedStyle(() => ({
-    transform: [{ translateX: (t.value - 0.5) * 2 * distance }],
-  }));
+  return t;
 }
 
 /**
@@ -304,11 +420,6 @@ function Ring({ done, total }: { done: number; total: number }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.sky },
-
-  cloudTop: { position: 'absolute', top: 30, right: -120 },
-  cloudTopArt: { width: 360, height: 240, opacity: 0.95 },
-  cloudLeft: { position: 'absolute', top: 330, left: -130 },
-  cloudLeftArt: { width: 300, height: 200, opacity: 0.8 },
 
   greetingRow: {
     marginHorizontal: GUTTER,

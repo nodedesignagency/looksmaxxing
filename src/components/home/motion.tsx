@@ -18,10 +18,10 @@ import type { StyleProp, ViewStyle } from 'react-native';
  * frame, and Home has far more text than that screen does.
  */
 
-/** How long each band takes, and how far apart they start. */
-const RISE = 380;
-const STAGGER = 70;
-const LIFT = 8;
+/** How long each band takes, how far apart they start, and how far they lift. */
+export const RISE = 380;
+export const STAGGER = 70;
+export const LIFT = 8;
 
 /**
  * A band of the screen, arriving in its turn.
