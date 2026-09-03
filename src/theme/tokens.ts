@@ -92,19 +92,15 @@ export const colors = {
   /** The 1px inside stroke on both, and on the level card. */
   cardStroke: '#ECF0F9',
   /**
-   * The gem pill — the one piece of real glass on the screen.
-   *
-   * Figma's Glass material on it reads Frost 67, Light -45 degrees at 80%,
-   * Refraction 32, Depth 95, Dispersion 50, Splay 48. Refraction and dispersion
-   * bend and split what is behind the plate, which nothing in React Native
-   * does; frost and the light are reproducible, and between them they carry
-   * most of what the effect looks like.
-   *
-   * So: a heavy blur, and a lit face rather than a flat one — bright at the
-   * top-left corner the light comes from, falling away to the opposite one.
+   * The gem pill. Straight off the inspector: white at 10%, and no stroke — the
+   * lit edge in the frame comes from the Glass effect, not from a border.
    */
-  glassLit: 'rgba(255, 255, 255, 0.20)',
-  glassShade: 'rgba(255, 255, 255, 0)',
+  glassFill: 'rgba(255, 255, 255, 0.1)',
+  /**
+   * Off iOS 26 there is no Liquid Glass, and a blur alone is far weaker, so the
+   * fallback carries more white than the frame's 10% to read as a plate at all.
+   */
+  glassFillFallback: 'rgba(255, 255, 255, 0.28)',
   glassEdge: 'rgba(255, 255, 255, 0.8)',
   /** Greeting: both lines white on the sky, the light one a shade back. */
   greeting: 'rgba(255, 255, 255, 0.9)',

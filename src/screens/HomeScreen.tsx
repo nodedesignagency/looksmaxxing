@@ -110,9 +110,9 @@ export default function HomeScreen() {
 
           <View style={styles.account}>
             {/* "Frame 2147235516" — a 74x41 pill: gem at 10, count at 34. */}
-            {/* Half its 41 of height, not the 999 the pill token carries: the
-                native glass takes this as a real corner radius. */}
-            <Glass style={styles.gemPill} radius={41 / 2} target={sky}>
+            {/* Radius 43, per the inspector — past half its 41 of height, so it
+                capsules, and a real number is what the native glass wants. */}
+            <Glass style={styles.gemPill} radius={43} target={sky}>
               <GemIcon size={20} />
               <Text style={[type.gemCount, styles.gemCount]}>{gems}</Text>
             </Glass>

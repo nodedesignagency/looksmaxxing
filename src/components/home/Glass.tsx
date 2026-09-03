@@ -1,6 +1,5 @@
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '../../theme/tokens';
@@ -8,31 +7,33 @@ import { colors } from '../../theme/tokens';
 /**
  * The gem pill — the one piece of glass on the Home frame.
  *
- * Figma's Glass material on that layer reads Frost 67, Light -45 degrees at
- * 80%, Refraction 32, Depth 95, Dispersion 50, Splay 48. That material is
- * Figma's take on Apple's Liquid Glass, so on iOS 26 the backdrop is the real
- * `UIGlassEffect` by way of `expo-glass-effect`, which Expo Go for SDK 57 ships
- * natively. Everywhere else it is a heavy blur.
+ * The inspector for that layer is short, and every earlier attempt here added
+ * things it does not contain:
  *
- * **The backdrop is only the backdrop.** Both of them are nearly invisible on
- * their own over a pale sky — Liquid Glass is adaptive and deliberately subtle,
- * and it drew nothing at all here on device. What makes this read as a plate is
- * the skin painted over it, and that is drawn identically on every platform:
- * a lit face, then the edge.
+ *   Fill     FFFFFF at 10%
+ *   Stroke   none
+ *   Effects  Glass — Light -45 degrees at 80%, Refraction 32, Depth 95,
+ *            Dispersion 50, Frost 67, Splay 48
+ *   Radius   43, padding 10, gap 4
  *
- * The edge is five concentric hairlines fading inward rather than one border or
- * an inset shadow. A single border draws a hard outline, which is not what
- * Depth 95 and Splay 48 give the frame; `boxShadow` with `inset` is the right
- * primitive and renders a stray lobe at the corner on iOS. Stacked rings are
- * plain Views, so they are pixel-identical on iOS, Android and web, and five of
- * them across five points is a soft glow.
+ * **There is no rim layer.** The bright edge in the rendered frame is made by
+ * the Glass effect itself — Depth and Splay are what light the perimeter — not
+ * by a stroke. Figma's Glass is its take on Apple's Liquid Glass, so on iOS 26
+ * the honest build is the real `UIGlassEffect` under that 10% white fill, and
+ * nothing more. `expo-glass-effect` wraps it and Expo Go for SDK 57 ships it.
+ *
+ * Four passes went into this before that, and each added a substitute for the
+ * edge the effect already draws: a heavy flat fill, a 1px rim, an inset shadow
+ * (which renders a stray lobe at the corner on iOS), and five stacked
+ * hairlines (a fuzzy halo). The fix was to stop drawing an edge.
+ *
+ * Off iOS 26 there is no native glass to make that edge, so the fallback keeps
+ * a single hairline for a limit and leans on a heavy blur. It is not the same
+ * effect and does not pretend to be.
  */
 
 /** Resolved once: it cannot change while the app is running. */
 const LIQUID = isLiquidGlassAvailable();
-
-/** The edge, from the rim inward. Opacity falls off to nothing over 5pt. */
-const RINGS = [0.85, 0.5, 0.3, 0.18, 0.09];
 
 type Props = {
   children: React.ReactNode;
@@ -45,38 +46,6 @@ type Props = {
 };
 
 export default function Glass({ children, style, target, intensity = 66, radius }: Props) {
-  const skin = (
-    <>
-      {/* Light at -45 degrees: the bright corner is the top-left one. */}
-      <LinearGradient
-        colors={[colors.glassLit, colors.glassShade]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.layer, { borderRadius: radius }]}
-        pointerEvents="none"
-      />
-      {RINGS.map((opacity, i) => (
-        <View
-          key={i}
-          pointerEvents="none"
-          style={[
-            styles.layer,
-            {
-              top: i,
-              left: i,
-              right: i,
-              bottom: i,
-              borderRadius: Math.max(0, radius - i),
-              borderWidth: 1,
-              borderColor: `rgba(255,255,255,${opacity})`,
-            },
-          ]}
-        />
-      ))}
-      {children}
-    </>
-  );
-
   if (LIQUID) {
     return (
       <GlassView
@@ -88,7 +57,9 @@ export default function Glass({ children, style, target, intensity = 66, radius 
         colorScheme="light"
         style={[styles.glass, { borderRadius: radius }, style]}
       >
-        {skin}
+        {/* The frame's whole fill: white at 10%, flat. */}
+        <View style={[styles.fill, { borderRadius: radius }]} pointerEvents="none" />
+        {children}
       </GlassView>
     );
   }
@@ -101,7 +72,15 @@ export default function Glass({ children, style, target, intensity = 66, radius 
       blurMethod="dimezisBlurViewSdk31Plus"
       style={[styles.glass, { borderRadius: radius }, style]}
     >
-      {skin}
+      {/*
+        The fill is a child rather than the blur's `backgroundColor`: every tint
+        lays its own translucent colour over the blur and that wins over the
+        style's background, so the plate came out the colour of the sky.
+      */}
+      <View style={[styles.fill, styles.fillFallback, { borderRadius: radius }]} pointerEvents="none" />
+      {/* Standing in for the edge the native effect would have drawn. */}
+      <View style={[styles.hairline, { borderRadius: radius }]} pointerEvents="none" />
+      {children}
     </BlurView>
   );
 }
@@ -111,5 +90,24 @@ const styles = StyleSheet.create({
     // Clips the backdrop to the corner radius; without it Android squares it.
     overflow: 'hidden',
   },
-  layer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  fill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.glassFill,
+  },
+  // A blur alone is far weaker than Liquid Glass, so the fallback carries more
+  // white than the frame's 10% to read as a plate at all.
+  fillFallback: { backgroundColor: colors.glassFillFallback },
+  hairline: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 1,
+    borderColor: colors.glassEdge,
+  },
 });
