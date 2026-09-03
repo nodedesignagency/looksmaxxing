@@ -7,6 +7,7 @@
     "@expo-google-fonts/geist": "^0.4.2",
     "@expo/metro-runtime": "~57.0.14",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@shopify/react-native-skia": "^2.6.2",
     "expo": "~57.0.18",
     "expo-blur": "~57.0.2",
     "expo-font": "~57.0.2",
@@ -34,7 +35,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "skia:web": "mkdir -p public && cp node_modules/canvaskit-wasm/bin/full/canvaskit.wasm public/"
   },
   "private": true,
   "overrides": {
