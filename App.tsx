@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TabBar, { type TabKey } from './src/components/TabBar';
 import type { Lesson } from './src/data/paths';
+import GlassLab from './src/screens/GlassLab';
 import HomeScreen from './src/screens/HomeScreen';
 import SkillPathScreen from './src/screens/SkillPathScreen';
 import { useProgress } from './src/state/useProgress';
@@ -87,6 +88,14 @@ function Shell() {
       <View style={[styles.screen, tab !== 'home' && styles.away]}>
         <HomeScreen />
       </View>
+      {/* TEMPORARY: the glass comparison sheet, parked on the Shop tab. Remove
+          this block, `GlassLab.tsx` and 'shop' from `available` once a row is
+          chosen. */}
+      {seen.includes('shop') && (
+        <View style={[styles.screen, tab !== 'shop' && styles.away]}>
+          <GlassLab />
+        </View>
+      )}
       {seen.includes('path') && (
         <View style={[styles.screen, tab !== 'path' && styles.away]}>
           <SkillPathScreen
@@ -102,7 +111,7 @@ function Shell() {
         onChange={show}
         bottomInset={insets.bottom}
         hidden={sheetOpen}
-        available={['home', 'path']}
+        available={['home', 'path', 'shop']}
       />
     </View>
   );
