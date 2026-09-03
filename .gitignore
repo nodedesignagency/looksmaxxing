@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# CanvasKit's WASM. Skia on web is this binary, and it is served from public/
+# so the fetch is same-origin rather than off a CDN. It is a byte-for-byte
+# copy of a file in node_modules — 8MB of build output — so it is generated,
+# not committed: `npm run skia:web`, which `npm run web` does for you.
+public/canvaskit.wasm

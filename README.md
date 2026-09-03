@@ -406,9 +406,22 @@ Two mechanics underneath it:
 
 Skia is pinned to an exact version, like `react-native-worklets`, because Expo
 Go ships its native side: `2.6.2` is what `expo/bundledNativeModules.json`
-lists for SDK 57. On web it is CanvasKit, fetched from jsDelivr before the app
-loads — `index.ts` wraps the root in `WithSkiaWeb` for that, and pins the
-`canvaskit-wasm` version the package depends on.
+lists for SDK 57.
+
+On web Skia is CanvasKit, an 8MB WASM binary that has to be fetched before the
+Skia API exists at all, so the root is wrapped in `WithSkiaWeb` — but in
+`root.web.tsx`, not `index.ts`. Metro bundles every `require` it can see
+whatever branch it sits in, so a `Platform.OS === 'web'` check around that
+import still pulls CanvasKit into the iOS bundle, where its `import "fs"` fails
+to resolve and Expo Go red-screens on launch. Platform files are the only way
+to keep it out of the graph. Both halves are `.tsx` deliberately: Metro tries
+every extension before every platform, so a `root.ts` would win over
+`root.web.tsx` on web and load Skia before CanvasKit was in.
+
+The binary is served from `public/`, which Expo copies to the web root, rather
+than from a CDN — same-origin, so it works offline and behind a proxy, neither
+of which a CDN does. It is generated rather than committed: `npm run web` runs
+`npm run skia:web` first, and that is also the thing to re-run when Skia moves.
 
 Strokes elsewhere on the screen are inset rings, not `borderWidth`: Figma's
 "Inside" stroke paints over a frame without taking layout, while a border in

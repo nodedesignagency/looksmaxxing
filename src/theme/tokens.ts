@@ -114,14 +114,21 @@ export const colors = {
   levelFill: '#10AB6E',
   /** "95/120 XP" is a muted green ink, not the bright green of its bolt. */
   levelXpInk: '#3B5E51',
-  levelLocked: '#C8ECDA',
+  levelLocked: '#CFFFEC',
+  /** Both badges carry a white inside stroke and a green glow under them. */
+  levelBadgeEdge: '#FFFFFF',
+  levelBadgeGlow: '#62FF51',
   /** Quest rows and their two states. */
-  questRow: '#F2F6FB',
+  questRow: '#F6FAFF',
   /** Row titles, off the inspector: plain black. */
   questTitle: '#000000',
   questBody: '#97A6B4',
-  questDone: '#17618F',
+  questDone: '#4284B4',
+  /** The mark's own glow, clipped by the row it sits in. */
+  questDoneGlow: '#51BFFF',
   questPending: '#BCD4E6',
+  /** The quest ring's track — paler than the dashed ring on a pending row. */
+  ringTrack: '#DFEEF7',
   /** The pale disc the frame sets each quest sprite on. */
   questIconPlate: 'rgba(255, 255, 255, 0.75)',
   /** Gems, the second currency beside XP. */
@@ -199,7 +206,6 @@ export const layout = {
   levelBadge: { width: 30, height: 20 },
   levelTrackHeight: 6,
   questRow: 81,
-  questRowTall: 90,
   questRowGap: 4,
   questPad: 12,
   questIcon: 32,
@@ -247,7 +253,7 @@ export const radii = {
   homeInner: 8,
   levelCard: 16,
   questCard: 16,
-  questRow: 16,
+  questRow: 12,
 } as const;
 
 /**

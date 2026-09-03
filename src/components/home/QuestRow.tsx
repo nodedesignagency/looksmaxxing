@@ -112,11 +112,9 @@ export default function QuestRow({ quest, done, onToggle }: Props) {
     transform: [{ scale: 1 + mark.value * 0.08 }, { rotate: `${mark.value * 6}deg` }],
   }));
 
-  const tall = quest.rewards !== undefined;
-
   return (
     <GestureDetector gesture={tap}>
-      <Animated.View style={[styles.row, tall && styles.rowTall, rowStyle]}>
+      <Animated.View style={[styles.row, rowStyle]}>
         <Animated.View style={[styles.tint, fillStyle]} pointerEvents="none" />
 
         {/* The frame sets the sprite on a pale disc rather than the row itself. */}
@@ -132,29 +130,17 @@ export default function QuestRow({ quest, done, onToggle }: Props) {
             {quest.detail}
           </Text>
 
-          {quest.rewards ? (
-            // "Frame 2147236453" — three 64x23 pills at 72 apart.
-            <View style={styles.pills}>
-              {quest.rewards.map((amount, i) => (
-                <View key={i} style={styles.pill}>
-                  <BoltIcon size={11} color={colors.xpGreen} />
-                  <Text style={[type.questReward, styles.xp]}>+{amount} XP</Text>
-                </View>
-              ))}
+          {/* "Frame 2147236453" — XP at x=0, gems at x=56, in an 86-wide row. */}
+          <View style={styles.rewards}>
+            <View style={styles.reward}>
+              <BoltIcon size={11} color={colors.xpGreen} />
+              <Text style={[type.questReward, styles.xp]}>+{quest.xp} XP</Text>
             </View>
-          ) : (
-            // "Frame 2147236453" — XP at x=0, gems at x=56, in an 86-wide row.
-            <View style={styles.rewards}>
-              <View style={styles.reward}>
-                <BoltIcon size={11} color={colors.xpGreen} />
-                <Text style={[type.questReward, styles.xp]}>+{quest.xp} XP</Text>
-              </View>
-              <View style={[styles.reward, styles.rewardGap]}>
-                <GemIcon size={12} />
-                <Text style={[type.questReward, styles.gem]}>+{quest.gems}</Text>
-              </View>
+            <View style={[styles.reward, styles.rewardGap]}>
+              <GemIcon size={12} />
+              <Text style={[type.questReward, styles.gem]}>+{quest.gems}</Text>
             </View>
-          )}
+          </View>
         </View>
 
         {/* "Frame 2147236430" — 24x24, a filled check once the quest is struck
@@ -180,8 +166,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: layout.questRowGap,
+    // "Clip content", and load-bearing: the mark's glow is a wide, soft blue
+    // that the frame cuts off at the row's edge. Uncut it washes over the
+    // rows either side.
+    overflow: 'hidden',
   },
-  rowTall: { height: layout.questRowTall },
   tint: {
     position: 'absolute',
     top: 0,
@@ -216,17 +205,6 @@ const styles = StyleSheet.create({
   xp: { marginLeft: 4, color: colors.xpGreen },
   gem: { marginLeft: 4, color: colors.gem },
 
-  pills: { flexDirection: 'row', marginTop: 10 },
-  pill: {
-    width: 64,
-    height: 23,
-    marginRight: 8,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
   status: {
     width: layout.questStatus,
@@ -250,5 +228,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.questDone,
     alignItems: 'center',
     justifyContent: 'center',
+    // Drop shadow 0/8/24 in 51BFFF at 20%. Figma's blur is twice the sigma
+    // iOS wants, so 24 there is a shadowRadius of 12 here.
+    shadowColor: colors.questDoneGlow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 12,
+    shadowOpacity: 0.2,
   },
 });

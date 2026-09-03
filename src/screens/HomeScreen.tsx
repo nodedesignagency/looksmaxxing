@@ -394,7 +394,12 @@ function useDrift(duration: number) {
  * The arc sweeps to its new length rather than jumping, so striking a quest
  * through has somewhere to land besides the row itself.
  */
-const R = 7;
+// The frame draws it as an 18x18 arc with an inner radius of 65.67%, so the
+// ring runs from 5.91 out to 9 — a 3.09 band centred on 7.46. It was a 2.5
+// stroke at 7, which is both thinner and smaller than the frame's.
+const OUTER = 9;
+const R = (OUTER + OUTER * 0.6567) / 2;
+const WIDTH = OUTER - OUTER * 0.6567;
 const C = 2 * Math.PI * R;
 
 function Ring({ done, total }: { done: number; total: number }) {
@@ -414,13 +419,13 @@ function Ring({ done, total }: { done: number; total: number }) {
 
   return (
     <Svg width={18} height={18} viewBox="0 0 18 18">
-      <Circle cx={9} cy={9} r={R} stroke={colors.questPending} strokeWidth={2.5} fill="none" />
+      <Circle cx={9} cy={9} r={R} stroke={colors.ringTrack} strokeWidth={WIDTH} fill="none" />
       <AnimatedCircle
         cx={9}
         cy={9}
         r={R}
         stroke={colors.questDone}
-        strokeWidth={2.5}
+        strokeWidth={WIDTH}
         fill="none"
         strokeLinecap="round"
         strokeDasharray={`0 ${C}`}

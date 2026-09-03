@@ -17,8 +17,6 @@ export type Quest = {
   glyph: GlyphName;
   xp: number;
   gems: number;
-  /** The fifth row in the frame carries three XP pills instead of one. */
-  rewards?: number[];
 };
 
 export type StreakDay = {
@@ -111,8 +109,6 @@ export const QUESTS: Quest[] = [
     glyph: 'hair',
     xp: 25,
     gems: 2,
-    // "Frame 2147236453" — three 64x23 pills where the other rows carry one.
-    rewards: [25, 25, 25],
   },
 ];
 

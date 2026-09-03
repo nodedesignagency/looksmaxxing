@@ -204,6 +204,16 @@ const styles = StyleSheet.create({
     borderRadius: BADGE.height / 2,
     alignItems: 'center',
     justifyContent: 'center',
+    // A 2px inside stroke in white, and a drop shadow 0/8/24 in 62FF51 at
+    // 20% — Figma's blur is twice the sigma iOS wants. Read off the locked
+    // badge; the cleared one is the same component and carries both in the
+    // render.
+    borderWidth: 2,
+    borderColor: colors.levelBadgeEdge,
+    shadowColor: colors.levelBadgeGlow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 12,
+    shadowOpacity: 0.2,
   },
   badgeDone: { backgroundColor: colors.levelFill },
   badgeLocked: { backgroundColor: colors.levelLocked },
