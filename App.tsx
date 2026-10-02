@@ -13,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TabBar, { type TabKey } from './src/components/TabBar';
 import type { Lesson } from './src/data/paths';
 import HomeScreen from './src/screens/HomeScreen';
+import { warmPathImages } from './src/lib/preload';
 import SkillPathScreen from './src/screens/SkillPathScreen';
 import { useProgress } from './src/state/useProgress';
 import { colors } from './src/theme/tokens';
@@ -64,6 +65,17 @@ function Shell() {
    * screen opens at the top of the road instead.
    */
   const [seen, setSeen] = useState<TabKey[]>(['home']);
+
+  /**
+   * Skill Path's images, pulled in behind Home.
+   *
+   * The screen stays lazy for the reasons above, but nothing fetches a bundled
+   * image until something renders it — so pressing Path was also the moment
+   * three cloud plates and two glyphs started loading, and they arrived one
+   * after another on a screen that was already drawn. Warming them here costs
+   * nothing anyone sees.
+   */
+  React.useEffect(warmPathImages, []);
   const show = useCallback((key: TabKey) => {
     setSeen((prev) => (prev.includes(key) ? prev : [...prev, key]));
     setTab(key);

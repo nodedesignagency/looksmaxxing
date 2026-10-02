@@ -34,6 +34,9 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 /** Height of one slice. Small enough to stay cheap, large enough to stay few. */
 const BAND = 1100;
 
+/** How long the road takes to draw itself on. See the note in the component. */
+const ENTRANCE = 520;
+
 type Props = {
   width: number;
   height: number;
@@ -51,9 +54,17 @@ export default function SkillRoad({ width, height, viewport, road, drawKey }: Pr
   // 0 -> 1 draws the whole ribbon on, from the top downward.
   const draw = useSharedValue(0);
 
+  /**
+   * Matched to the Home screen's entrance, which is the rhythm the app reads
+   * at: a 380ms cubic ease-out per band on a 70ms stagger. This is a sweep
+   * across a whole screenful rather than one band fading up, so it is given a
+   * little longer than 380 — but only a little. At a full second the road was
+   * still arriving after every node had landed on it, and the screen felt
+   * slow because the biggest thing on it was the last to turn up.
+   */
   useEffect(() => {
     draw.value = 0;
-    draw.value = withTiming(1, { duration: 1000, easing: Easing.out(Easing.cubic) });
+    draw.value = withTiming(1, { duration: ENTRANCE, easing: Easing.out(Easing.cubic) });
   }, [drawKey, draw]);
 
   // Dash the full length off, then pull the offset to zero to draw the road.
@@ -61,8 +72,14 @@ export default function SkillRoad({ width, height, viewport, road, drawKey }: Pr
     strokeDashoffset: (1 - draw.value) * total,
   }));
 
+  /**
+   * The centre line comes up behind the surface, and is fully in before the
+   * road has finished drawing. It used to wait until the draw was 45% done and
+   * only reach full strength at the very end, so the dashes were still fading
+   * up after the road had arrived — half the reason the entrance dragged.
+   */
   const dashProps = useAnimatedProps(() => ({
-    opacity: Math.max(0, (draw.value - 0.45) / 0.55),
+    opacity: Math.min(1, Math.max(0, (draw.value - 0.25) / 0.45)),
   }));
 
   /** Soft ground shadow, so the road sits above the sky. */

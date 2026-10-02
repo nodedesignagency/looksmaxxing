@@ -153,6 +153,14 @@ src/
   screens/HomeScreen.tsx
 ```
 
+Skill Path's *images* are warmed behind Home all the same (`lib/preload.ts`).
+Nothing fetches a bundled image until something renders it, and in Expo Go that
+fetch goes over the dev server — so pressing Path was the moment three cloud
+plates and two glyphs started loading, and they arrived one after another on a
+screen that was otherwise already drawn. The lists come from the modules that
+own the images rather than being restated, so adding a plate warms it without
+anyone remembering to.
+
 `App.tsx` holds the two screens the tab bar can reach. Home is built at launch;
 Skill Path is built the first time Path is pressed and kept from then on. Not
 both up front, for two reasons: Skill Path lays out a five thousand point road
@@ -165,8 +173,14 @@ with.
 
 ## Motion
 
-- The road draws itself on from the top with an animated dash offset, then its
-  centre line fades up and marches slowly along the surface.
+- The road draws itself on from the top with an animated dash offset, and its
+  centre line fades up behind it, fully in before the draw finishes. Both are
+  matched to the Home screen's entrance — a 380ms cubic ease-out per band on a
+  70ms stagger — which is the rhythm the app reads at. The road is given a
+  little more than 380 because it is a sweep across a screenful rather than one
+  band fading up, but only a little: at the full second it used to take, it was
+  still arriving after every node had landed on it, and the screen felt slow
+  because the biggest thing on it was the last to turn up.
 - Nodes fade and lift in on a 34ms stagger, and only on the opening screenful.
   Nodes mount and unmount as the road scrolls, so replaying the entrance every
   time one re-entered the window set off a wave of them mid-scroll.

@@ -41,9 +41,13 @@ export const ChartIcon = ({ size = 20, color = '#000' }: GlyphProps) => (
   <ProgressSvg width={size} height={size} color={color} />
 );
 
+/** Hoisted so `lib/preload` can warm them without restating their paths. */
+export const PLAY_IMAGE = require('../../assets/icons/play.png');
+export const LOCK_IMAGE = require('../../assets/icons/lock.png');
+
 export const PlayIcon = ({ size = 16, color = '#588AAB' }: GlyphProps) => (
   <Image
-    source={require('../../assets/icons/play.png')}
+    source={PLAY_IMAGE}
     style={[styles.glyph, { width: size, height: size }]}
     tintColor={color}
     resizeMode="contain"
@@ -52,7 +56,7 @@ export const PlayIcon = ({ size = 16, color = '#588AAB' }: GlyphProps) => (
 
 export const KeyholeIcon = ({ size = 16, color = '#588AAB' }: GlyphProps) => (
   <Image
-    source={require('../../assets/icons/lock.png')}
+    source={LOCK_IMAGE}
     style={[styles.glyph, { width: size, height: size }]}
     tintColor={color}
     resizeMode="contain"

@@ -49,6 +49,9 @@ const PLATES = [
   require('../../assets/clouds/cloud-3.png'),
 ];
 
+/** Every plate this sky draws, for `lib/preload` to warm. */
+export const BACKDROP_IMAGES = [MAIN, ...PLATES];
+
 /** A slow sideways wander, so no two clouds ever line up the same way twice. */
 function useDrift(distance: number, duration: number) {
   const t = useSharedValue(0);
