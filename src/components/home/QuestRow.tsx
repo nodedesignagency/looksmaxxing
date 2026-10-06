@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { captureRef } from 'react-native-view-shot';
 import Animated, {
@@ -179,9 +179,26 @@ export default function QuestRow({
     );
   }, [clearing, close, onClosed, quest.id]);
 
-  const slotStyle = useAnimatedStyle(() => ({
-    height: (1 - close.value) * SLOT,
-  }));
+  /**
+   * The slot gives its height back as the dust settles.
+   *
+   * It is only pinned while that is happening: a row hugs its content, so the
+   * height to collapse from is whatever it measured rather than a constant.
+   * Left pinned the rest of the time, a row whose text ran a point taller than
+   * the frame's would be clipped by the slot instead of growing.
+   */
+  const slotHeight = useSharedValue(SLOT);
+  const onRowLayout = React.useCallback(
+    (e: LayoutChangeEvent) => {
+      slotHeight.value = e.nativeEvent.layout.height + layout.questRowGap;
+    },
+    [slotHeight],
+  );
+
+  const slotStyle = useAnimatedStyle(
+    () => (clearing ? { height: (1 - close.value) * slotHeight.value } : {}),
+    [clearing],
+  );
 
   const tap = React.useMemo(
     () =>
@@ -236,6 +253,7 @@ export default function QuestRow({
         <Animated.View
           ref={rowRef}
           collapsable={false}
+          onLayout={onRowLayout}
           style={[styles.row, rowStyle]}
         >
           <Animated.View style={[styles.tint, fillStyle]} pointerEvents="none" />
@@ -285,9 +303,9 @@ export default function QuestRow({
 const SLOT = layout.questRow + layout.questRowGap;
 
 const styles = StyleSheet.create({
-  slot: { height: SLOT, overflow: 'hidden' },
+  slot: { overflow: 'hidden' },
   row: {
-    height: layout.questRow,
+    minHeight: layout.questRow,
     borderRadius: radii.questRow,
     backgroundColor: colors.questRow,
     padding: layout.questPad,
@@ -327,7 +345,11 @@ const styles = StyleSheet.create({
   title: { color: colors.questTitle },
   body: { color: colors.questBody, marginTop: 2 },
 
-  rewards: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  // The frame's gap is 8, measured cap-to-cap. A line box carries half its
+  // leading above and below the ink, so the margin that renders as 8 between
+  // the body's baseline and the reward row is about 3 — at 10 the gap came out
+  // at 15, which is the whole of the 6 the row was over its 57 of content box.
+  rewards: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
   reward: { flexDirection: 'row', alignItems: 'center' },
   rewardGap: { marginLeft: 8 },
   xp: { marginLeft: 4, color: colors.xpGreen },

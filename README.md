@@ -536,6 +536,28 @@ re-renders about once per screen of travel rather than per frame.
 Together that halved the element count and cut the tallest layer from 5143pt to
 1100.
 
+### The row's height is hugged, not set
+
+The frame's quest row is **81 Hug** — a result, not a constraint — with 12 of
+padding and a gap of 8. That distinction is load-bearing. Figma measures text
+cap-to-cap; React Native lays out whole line boxes, each carrying half its
+leading above and below the ink. The same copy therefore comes out a little
+taller here, and on a fixed 81 that difference came out of the padding rather
+than the height: the column measured 63 in a 57 content box, so the row sat 12
+from the top and 6 from the bottom, and on a device it crowded the edge harder
+still.
+
+So `minHeight` rather than `height`, and the gap below the body set to the
+margin that *renders* as the frame's 8 rather than to 8 itself — about 3, since
+the leading on either side already contributes five. Measured on the rendered
+ink, a row now sits 12.2 from the top and 10.9 from the bottom with both
+internal gaps at 7.2, against 12.2 and 3.9 with a 14.9 gap before.
+
+The slot the dust collapses is pinned only while that is happening, since a row
+that hugs has no constant height to collapse from — it measures itself with
+`onLayout`. Pinned the rest of the time, a row whose text ran a point taller
+than the frame's would be clipped by the slot instead of growing.
+
 ## Striking a quest through
 
 Nothing is ticked when the screen opens, and ticking is one way: the mark lands,

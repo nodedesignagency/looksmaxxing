@@ -207,6 +207,13 @@ export const layout = {
   levelPad: 12,
   levelBadge: { width: 30, height: 20 },
   levelTrackHeight: 6,
+  /**
+    * The frame's row is "81 Hug" — a result, not a constraint, so this is a
+    * minimum rather than a height. Figma measures text cap-to-cap and React
+    * Native lays out whole line boxes, so the same copy comes out a point or
+    * two taller here, and on a fixed 81 that difference came out of the
+    * padding instead of the height.
+    */
   questRow: 81,
   questRowGap: 4,
   questPad: 12,
