@@ -558,6 +558,12 @@ that hugs has no constant height to collapse from — it measures itself with
 `onLayout`. Pinned the rest of the time, a row whose text ran a point taller
 than the frame's would be clipped by the slot instead of growing.
 
+The quest header hugs for the same reason — its 43 is exactly two line boxes
+and the 4 between them — and it now keeps 12 below it rather than 4. The rows
+sit 4 apart, so a header 4 above the first of them was no further from it than
+they are from each other, and "Quests resets at midnight" read as the first
+quest's top line rather than as the section's subtitle.
+
 ## Striking a quest through
 
 Nothing is ticked when the screen opens, and ticking is one way: the mark lands,

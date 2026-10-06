@@ -545,11 +545,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardStroke,
   },
-  // "Frame 2147236414" — 342x43, its content 12 in from the card's own 4.
+  /**
+   * "Frame 2147236414" — 342x43, its content 12 in from the card's own 4.
+   *
+   * `minHeight`, not `height`, for the reason the rows hug: 43 is exactly the
+   * two line boxes and the 4 between them, so a device whose text ran a point
+   * taller would push the subtitle into the card rather than take the point.
+   *
+   * And 12 below rather than 4. The rows are 4 apart, so a header 4 above the
+   * first of them was no further from it than they are from each other, and
+   * "Quests resets at midnight" read as the top line of the first quest rather
+   * than as the section's own subtitle. 12 is the card's own padding, which is
+   * the gap this screen already uses to separate one thing from another.
+   */
   questHead: {
-    height: 43,
+    minHeight: 43,
     paddingHorizontal: 12,
-    marginBottom: 4,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
